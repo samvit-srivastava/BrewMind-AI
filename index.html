@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrewMind AI - AI Operations Copilot & Digital Twin</title>
+  <!-- SEO & Meta -->
+  <meta name="description" content="BrewMind AI is the ultimate operations dashboard and Digital Twin for campus cafés. Reduce wait times, track inventory, and get real-time recommendations.">
+  
+  <!-- CDNs -->
+  <!-- GSAP Animation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Global Error Logger for Hackathon Debugging -->
+  <script>
+    window.addEventListener('error', function(e) {
+      const errDiv = document.createElement('div');
+      errDiv.style.position = 'fixed';
+      errDiv.style.inset = '0';
+      errDiv.style.background = 'rgba(139, 30, 20, 0.95)';
+      errDiv.style.color = '#FFF';
+      errDiv.style.padding = '3rem';
+      errDiv.style.zIndex = '1000000';
+      errDiv.style.fontFamily = 'monospace';
+      errDiv.style.fontSize = '14px';
+      errDiv.style.lineHeight = '1.6';
+      errDiv.style.overflow = 'auto';
+      errDiv.style.whiteSpace = 'pre-wrap';
+      errDiv.innerHTML = '<h2 style="margin-bottom:1rem;color:#FF5555;">[BrewMind Debugger] Global Script Error</h2>' + 
+                         '<strong>Message:</strong> ' + e.message + '\n' +
+                         '<strong>Source:</strong> ' + e.filename + ' @ line ' + e.lineno + ':' + e.colno + '\n\n' +
+                         '<strong>Stack Trace:</strong>\n' + (e.error ? e.error.stack : 'No stack trace available.');
+      document.body.appendChild(errDiv);
+    });
+  </script>
+</head>
+<body>
+
+  <!-- --- Splash Screen --- -->
+  <div id="splash-screen">
+    <!-- Skip Intro Button -->
+    <button id="btn-skip-splash" class="skip-btn">Skip Intro</button>
+
+    <!-- Cinematic Splash Container -->
+    <div class="splash-cinematic-container" id="splash-cinematic-container">
+      
+      <!-- Stage Area for Coffee Bean and Cup -->
+      <div class="splash-stage-area" id="splash-stage-area">
+        <div class="splash-logo-glow" id="splash-logo-glow"></div>
+
+        <!-- Realistic Coffee Bean SVG -->
+        <svg id="coffee-bean" width="42" height="62" viewBox="0 0 40 60" style="position: absolute; top: -140px; left: calc(50% - 21px); transform-style: preserve-3d; will-change: transform; opacity: 0; z-index: 10;">
+          <defs>
+            <radialGradient id="bean-grad" cx="50%" cy="30%" r="50%" fx="30%" fy="30%">
+              <stop offset="0%" stop-color="#8E5E38" />
+              <stop offset="70%" stop-color="#5C3A21" />
+              <stop offset="100%" stop-color="#3A2210" />
+            </radialGradient>
+          </defs>
+          <path d="M 20 2 C 34 2, 38 18, 38 30 C 38 42, 34 58, 20 58 C 6 58, 2 42, 2 30 C 2 18, 6 2, 20 2 Z" fill="url(#bean-grad)" filter="drop-shadow(0px 4px 6px rgba(0,0,0,0.5))" />
+          <path d="M 20 2 C 20 15, 12 25, 20 30 C 28 35, 20 45, 20 58" fill="none" stroke="#251307" stroke-width="2.5" stroke-linecap="round" />
+          <path d="M 6 15 C 8 8, 14 4, 20 4" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+
+        <!-- Premium Glass Cup SVG -->
+        <svg id="glass-cup" width="120" height="130" viewBox="0 0 120 130" style="position: absolute; bottom: 10px; left: calc(50% - 60px); opacity: 0; transform: scale(0.9); z-index: 5; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));">
+          <defs>
+            <linearGradient id="liquid-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop id="liq-stop1" offset="0%" stop-color="#FFFFFF" />
+              <stop id="liq-stop2" offset="100%" stop-color="#F3ECE6" />
+            </linearGradient>
+            <linearGradient id="glass-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.4)" />
+              <stop offset="25%" stop-color="rgba(255, 255, 255, 0.08)" />
+              <stop offset="75%" stop-color="rgba(255, 255, 255, 0.04)" />
+              <stop offset="100%" stop-color="rgba(255, 255, 255, 0.25)" />
+            </linearGradient>
+            <radialGradient id="cup-shadow" cx="60" cy="60" r="50" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="rgba(0,0,0,0)" />
+              <stop offset="78%" stop-color="rgba(0,0,0,0.02)" />
+              <stop offset="93%" stop-color="rgba(60,34,15,0.45)" />
+              <stop offset="100%" stop-color="rgba(30,17,7,0.72)" />
+            </radialGradient>
+            <filter id="foam-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="1.0" result="blur" />
+              <feColorMatrix type="matrix" values="0 0 0 0 0.98   0 0 0 0 0.94   0 0 0 0 0.88  0 0 0 0.35 0" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <ellipse id="liquid-surface" cx="60" cy="50" rx="36" ry="10" fill="#FFFFFF" />
+          <ellipse id="liquid-shadow" cx="60" cy="50" rx="36" ry="10" fill="url(#cup-shadow)" style="opacity: 0; pointer-events: none;" />
+          <path id="liquid-body" d="M 24 50 Q 24 100, 36 110 L 84 110 Q 96 100, 96 50 Z" fill="url(#liquid-grad)" />
+          
+          <!-- Crema Tiger-striping Marbling Swirls centered at (60, 60) -->
+          <g id="crema-marbling" style="opacity: 0; pointer-events: none; transform-box: view-box; transform-origin: 60px 60px; transform: scale(0.95, 0.28) translate(0px, -10px);">
+            <path d="M 28 58 C 40 50, 80 50, 92 58 C 80 66, 40 66, 28 58 Z" fill="#8C5A3C" opacity="0.22" />
+            <path d="M 34 66 C 44 58, 76 58, 86 66 C 76 74, 44 74, 34 66 Z" fill="#4E311A" opacity="0.16" />
+            <path d="M 38 50 C 46 44, 74 44, 82 50 C 74 56, 46 56, 38 50 Z" fill="#8C5A3C" opacity="0.18" />
+          </g>
+          <!-- High-Fidelity Latte Art Rosetta/Tulip centered at (60, 60) -->
+          <!-- High-Fidelity Latte Art Rosetta/Tulip centered at (60, 60) -->
+          <!-- High-Fidelity Latte Art Rosetta/Tulip centered at (60, 60) -->
+          <g id="latte-art-group" filter="url(#foam-glow)" style="opacity: 0; pointer-events: none; transform-box: view-box; transform-origin: 60px 60px;">
+            <!-- Stem slicing through the center (draws bottom-to-top) -->
+            <line class="latte-stem" x1="60" y1="92" x2="60" y2="30" stroke="#FFFDF6" stroke-width="2.6" stroke-linecap="round" style="stroke-dasharray: 65; stroke-dashoffset: 65; opacity: 0;" />
+            
+            <!-- Rosetta wing leaves (organic solid filled curves - fade in) -->
+            <!-- Bottom wing tier -->
+            <path class="latte-leaf" d="M 60 88 C 42 90, 20 78, 20 68 C 20 62, 40 66, 60 71 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.3" stroke-linejoin="round" style="opacity: 0;" />
+            <path class="latte-leaf" d="M 60 88 C 78 90, 100 78, 100 68 C 100 62, 80 66, 60 71 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.3" stroke-linejoin="round" style="opacity: 0;" />
+            
+            <!-- Tier 2 wings -->
+            <path class="latte-leaf" d="M 60 79 C 45 81, 24 71, 24 62 C 24 57, 42 61, 60 66 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.3" stroke-linejoin="round" style="opacity: 0;" />
+            <path class="latte-leaf" d="M 60 79 C 75 81, 96 71, 96 62 C 96 57, 78 61, 60 66 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.3" stroke-linejoin="round" style="opacity: 0;" />
+
+            <!-- Tier 3 wings -->
+            <path class="latte-leaf" d="M 60 71 C 48 73, 28 64, 28 56 C 28 51, 44 55, 60 60 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.2" stroke-linejoin="round" style="opacity: 0;" />
+            <path class="latte-leaf" d="M 60 71 C 72 73, 92 64, 92 56 C 92 51, 76 55, 60 60 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.2" stroke-linejoin="round" style="opacity: 0;" />
+
+            <!-- Tier 4 wings -->
+            <path class="latte-leaf" d="M 60 63 C 50 65, 32 57, 32 50 C 32 45, 46 49, 60 54 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.2" stroke-linejoin="round" style="opacity: 0;" />
+            <path class="latte-leaf" d="M 60 63 C 70 65, 88 57, 88 50 C 88 45, 74 49, 60 54 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.2" stroke-linejoin="round" style="opacity: 0;" />
+            
+            <!-- Stacked Tulip Petals (nested heart cups) -->
+            <!-- Cup 1 (Bottom Tulip Base) -->
+            <path class="latte-petal" d="M 40 48 C 40 41, 52 40, 60 44 C 68 40, 80 41, 80 48 C 80 54, 60 59, 60 59 C 60 59, 40 54, 40 48 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.6" stroke-linejoin="round" style="opacity: 0;" />
+            
+            <!-- Cup 2 (Middle Tulip) -->
+            <path class="latte-petal" d="M 44 41 C 44 35, 54 34, 60 38 C 66 34, 76 35, 76 41 C 76 46, 60 51, 60 51 C 60 51, 44 46, 44 41 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.6" stroke-linejoin="round" style="opacity: 0;" />
+            
+            <!-- Cup 3 (Top Tulip) -->
+            <path class="latte-petal" d="M 48 34 C 48 29, 56 28, 60 32 C 64 28, 72 29, 72 34 C 72 38, 60 42, 60 42 C 60 42, 48 38, 48 34 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.6" stroke-linejoin="round" style="opacity: 0;" />
+            
+            <!-- Top Heart -->
+            <path class="latte-petal" d="M 60 27 C 58 24, 52 24, 52 27 C 52 30, 60 33, 60 33 C 60 33, 68 30, 68 27 C 68 24, 62 24, 60 27 Z" fill="#FFFDF6" stroke="#6F4E37" stroke-width="1.6" stroke-linejoin="round" style="opacity: 0;" />
+          </g>
+
+          <path id="glass-body-path" d="M 20 30 L 22 50 Q 22 105, 34 115 L 86 115 Q 98 105, 98 50 L 100 30" fill="none" stroke="url(#glass-grad)" stroke-width="3" stroke-linecap="round" />
+          <ellipse id="glass-rim" cx="60" cy="30" rx="40" ry="12" fill="none" stroke="url(#glass-grad)" stroke-width="3" />
+          <path id="mug-handle" d="M 10 60 C -12 70, -12 50, 10 40" fill="none" stroke="url(#glass-grad)" stroke-width="4.5" stroke-linecap="round" style="opacity: 0;" />
+          <path id="liquid-swirl1" d="M 35 70 Q 60 90, 85 70" fill="none" stroke="#68462D" stroke-width="4" stroke-linecap="round" opacity="0" />
+          <path id="liquid-swirl2" d="M 40 85 Q 60 100, 80 85" fill="none" stroke="#4E311A" stroke-width="3" stroke-linecap="round" opacity="0" />
+          <ellipse id="ripple-circle1" cx="60" cy="50" rx="0" ry="0" fill="none" stroke="rgba(212, 163, 115, 0.7)" stroke-width="2" opacity="0" />
+          <ellipse id="ripple-circle2" cx="60" cy="50" rx="0" ry="0" fill="none" stroke="rgba(212, 163, 115, 0.4)" stroke-width="1.5" opacity="0" />
+        </svg>
+
+        <!-- Splash Particles -->
+        <div class="splash-dot" style="top: 110px; left: 75px; opacity: 0;"></div>
+        <div class="splash-dot" style="top: 110px; left: 85px; opacity: 0;"></div>
+        <div class="splash-dot" style="top: 110px; left: 95px; opacity: 0;"></div>
+        <div class="splash-dot" style="top: 110px; left: 105px; opacity: 0;"></div>
+        <div class="splash-dot" style="top: 110px; left: 115px; opacity: 0;"></div>
+        <div class="splash-dot" style="top: 110px; left: 125px; opacity: 0;"></div>
+
+        <!-- Steam lines rising from cup -->
+        <div class="splash-steam-container" id="splash-steam-container">
+          <div class="steam-line"></div>
+          <div class="steam-line"></div>
+          <div class="steam-line"></div>
+        </div>
+
+      </div>
+
+      <!-- BrewMind Logo & Text -->
+      <h1 class="splash-title" id="splash-title">
+        <span style="color: var(--color-primary); font-weight: 300;">Brew</span>Mind AI
+      </h1>
+      <p class="splash-subtitle" id="splash-subtitle">Digital Operations Twin</p>
+    </div>
+  </div>
+
+  <!-- --- Main Application Layout --- -->
+  <div id="app-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-brand" style="position: relative; overflow: visible;">
+          <div class="steam-container" style="top: -20px; left: 10px; transform: scale(0.65);">
+            <div class="steam-line"></div>
+            <div class="steam-line"></div>
+            <div class="steam-line"></div>
+          </div>
+          <i data-lucide="cpu" class="brand-icon"></i>
+          <span class="brand-text">BrewMind AI</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-item active" data-view="dashboard" id="nav-dashboard">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Dashboard</span>
+          </div>
+          <div class="nav-item" data-view="twin" id="nav-twin">
+            <i data-lucide="layers"></i>
+            <span>Digital Twin</span>
+          </div>
+          <div class="nav-item" data-view="inventory" id="nav-inventory">
+            <i data-lucide="package"></i>
+            <span>Inventory</span>
+          </div>
+          <div class="nav-item" data-view="analytics" id="nav-analytics">
+            <i data-lucide="trending-up"></i>
+            <span>Analytics</span>
+          </div>
+          <div class="nav-item" data-view="scenarios" id="nav-scenarios">
+            <i data-lucide="play-circle"></i>
+            <span>Scenario Sandbox</span>
+          </div>
+          <div class="nav-item" data-view="settings" id="nav-settings">
+            <i data-lucide="settings"></i>
+            <span>Settings</span>
+          </div>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="profile-card" id="profile-trigger">
+          <div class="profile-avatar" id="avatar-letters">AM</div>
+          <div class="profile-info">
+            <span class="profile-name" id="display-manager-name">Alex Manager</span>
+            <span class="profile-role" id="display-cafe-name">BrewMind HQ</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-layout">
+      
+      <!-- Top Header -->
+      <header class="header">
+        <div class="header-left">
+          <h2 class="header-greeting" id="header-welcome">Welcome back, Alex</h2>
+          <span class="header-subtext" id="header-date">Tuesday, June 30, 2026</span>
+        </div>
+
+        <div class="header-center">
+          <div class="header-widget" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.6rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 20px;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; border-right: 1px solid var(--glass-border); padding-right: 0.5rem; margin-right: 0.25rem;">
+              <button class="icon-btn-small" id="sim-btn-play" title="Resume Simulation" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; display: flex; align-items: center;"><i data-lucide="play" style="width: 13px; height: 13px;"></i></button>
+              <button class="icon-btn-small" id="sim-btn-pause" title="Pause Simulation" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; display: flex; align-items: center;"><i data-lucide="pause" style="width: 13px; height: 13px;"></i></button>
+              <select id="sim-speed-select" style="background: none; border: none; color: var(--color-primary); font-size: 0.72rem; font-weight: 600; cursor: pointer; outline: none; padding: 0;">
+                <option value="1">1x</option>
+                <option value="2">2x</option>
+                <option value="5">5x</option>
+                <option value="10">10x</option>
+              </select>
+            </div>
+            <i data-lucide="clock" style="width: 14px; height: 14px; color: var(--color-primary);"></i>
+            <span id="widget-clock" style="font-size: 0.78rem; font-weight: 600;">07:00 AM</span>
+          </div>
+          <div class="header-widget" title="Current Weather Conditions">
+            <i data-lucide="sun" id="widget-weather-icon"></i>
+            <span id="widget-weather-text">Sunny, 24°C</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Active Store Health -->
+          <div class="header-widget" title="Store Operational Status">
+            <div class="health-indicator">
+              <span class="health-dot pulse" id="health-dot"></span>
+              <span id="health-label">System Stable</span>
+            </div>
+          </div>
+
+          <!-- Alert Notifications Center -->
+          <button class="icon-btn" id="btn-notifications" title="System Notifications">
+            <i data-lucide="bell"></i>
+            <span class="btn-badge" id="notifications-count" style="display: none;">0</span>
+          </button>
+
+          <!-- Mute Toggle -->
+          <button class="icon-btn" id="btn-mute-toggle" title="Mute / Unmute Notifications" style="position: relative;">
+            <i data-lucide="volume-2" id="mute-icon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- View Wrapper -->
+      <div class="content-area">
+        
+        <!-- View 1: Dashboard -->
+        <section id="view-dashboard" class="view-section active">
+          
+          <!-- Campus Command Center -->
+          <div class="panel-container" style="margin-bottom: 1.25rem; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(30, 24, 20, 0.45), rgba(15, 12, 10, 0.45)); border-radius: 16px;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div style="background: var(--color-primary-glow); padding: 0.35rem; border-radius: 8px; color: var(--color-primary);"><i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i></div>
+              <div>
+                <h4 style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; margin: 0;">Campus Command Center</h4>
+                <p style="font-size: 0.7rem; color: var(--text-muted); margin: 0;">Real-time overview & predictive diagnostics of the campus café network.</p>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.25rem;">
+              <div>
+                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Campus Activity</span>
+                <div style="font-size: 1rem; font-weight: 700; color: var(--color-primary); margin-top: 0.15rem; display: flex; align-items: center; gap: 0.4rem;">
+                  <span id="cmd-activity">Normal</span>
+                  <span class="badge" id="cmd-activity-badge" style="font-size: 0.6rem; background: rgba(212, 163, 115, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); padding: 0.05rem 0.25rem; border-radius: 4px;">LIVE</span>
+                </div>
+              </div>
+              <div>
+                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Students on Campus</span>
+                <div style="font-size: 1rem; font-weight: 700; color: #FFF; margin-top: 0.15rem;" id="cmd-population">15,000</div>
+              </div>
+              <div>
+                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Active Customers</span>
+                <div style="font-size: 1rem; font-weight: 700; color: #FFF; margin-top: 0.15rem;" id="cmd-customers">0</div>
+              </div>
+              <div>
+                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Expected Next Rush</span>
+                <div style="font-size: 1rem; font-weight: 700; color: var(--color-warning); margin-top: 0.15rem;" id="cmd-next-rush">Class Break at 10:30</div>
+              </div>
+              <div>
+                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Predicted Closing Revenue</span>
+                <div style="font-size: 1rem; font-weight: 700; color: var(--color-success); margin-top: 0.15rem;" id="cmd-pred-revenue">$0.00</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main KPI Metrics - Expanded 10 Deck -->
+          <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+            
+            <!-- 1. Revenue -->
+            <div class="card-kpi" id="kpi-revenue">
+              <div class="kpi-header">
+                <span class="kpi-title">Daily Revenue</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="dollar-sign"></i></div>
+              </div>
+              <div class="kpi-value" id="val-revenue">$0.00</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend up" id="trend-revenue" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="arrow-up-right" style="width:12px; height:12px;"></i> +0.0%</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-revenue" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-revenue">Just now</span></div>
+            </div>
+
+            <!-- 2. Orders -->
+            <div class="card-kpi" id="kpi-orders">
+              <div class="kpi-header">
+                <span class="kpi-title">Completed Orders</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="shopping-bag"></i></div>
+              </div>
+              <div class="kpi-value" id="val-orders">0</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend up" id="trend-orders" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="arrow-up-right" style="width:12px; height:12px;"></i> +0%</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-primary); fill: none; stroke-width: 1.8;"><path id="spark-orders" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-orders">Just now</span></div>
+            </div>
+
+            <!-- 3. Queue Load -->
+            <div class="card-kpi" id="kpi-queue">
+              <div class="kpi-header">
+                <span class="kpi-title">Queue Length</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="users"></i></div>
+              </div>
+              <div class="kpi-value" id="val-queue">0</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend" id="trend-queue" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--text-muted); font-weight: 600;"><i data-lucide="minus" style="width:12px; height:12px;"></i> Static</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-warning); fill: none; stroke-width: 1.8;"><path id="spark-queue" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-queue">Just now</span></div>
+            </div>
+
+            <!-- 4. Average Wait Time -->
+            <div class="card-kpi" id="kpi-wait">
+              <div class="kpi-header">
+                <span class="kpi-title">Average Wait Time</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="hourglass"></i></div>
+              </div>
+              <div class="kpi-value" id="val-wait">0.0m</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend down" id="trend-wait" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="arrow-down-right" style="width:12px; height:12px;"></i> -0%</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-wait" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-wait">Just now</span></div>
+            </div>
+
+            <!-- 5. Inventory Health -->
+            <div class="card-kpi" id="kpi-inventory-health">
+              <div class="kpi-header">
+                <span class="kpi-title">Inventory Health</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="package"></i></div>
+              </div>
+              <div class="kpi-value" id="val-inventory-health">100%</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend" id="trend-inventory-health" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="trending-up" style="width:12px; height:12px;"></i> Optimal</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-inventory-health" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-inventory-health">Just now</span></div>
+            </div>
+
+            <!-- 6. Machine Health -->
+            <div class="card-kpi" id="kpi-machine-health">
+              <div class="kpi-header">
+                <span class="kpi-title">Machine Health</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="cpu"></i></div>
+              </div>
+              <div class="kpi-value" id="val-machine-health">100%</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend" id="trend-machine-health" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="activity" style="width:12px; height:12px;"></i> Stable</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-machine-health" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-machine-health">Just now</span></div>
+            </div>
+
+            <!-- 7. Customer Satisfaction -->
+            <div class="card-kpi" id="kpi-satisfaction">
+              <div class="kpi-header">
+                <span class="kpi-title">Satisfaction Rate</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="smile"></i></div>
+              </div>
+              <div class="kpi-value" id="val-satisfaction">0%</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend up" id="trend-satisfaction" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="arrow-up-right" style="width:12px; height:12px;"></i> +0%</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-satisfaction" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-satisfaction">Just now</span></div>
+            </div>
+
+            <!-- 8. Cafe Reputation -->
+            <div class="card-kpi" id="kpi-reputation">
+              <div class="kpi-header">
+                <span class="kpi-title">Café Reputation</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="award"></i></div>
+              </div>
+              <div class="kpi-value" id="val-reputation">0/100</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend up" id="trend-reputation" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="trending-up" style="width:12px; height:12px;"></i> Stable</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-primary); fill: none; stroke-width: 1.8;"><path id="spark-reputation" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-reputation">Just now</span></div>
+            </div>
+
+            <!-- 9. Staff Efficiency -->
+            <div class="card-kpi" id="kpi-staff">
+              <div class="kpi-header">
+                <span class="kpi-title">Staff Efficiency</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="user-check"></i></div>
+              </div>
+              <div class="kpi-value" id="val-staff">1.0x</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend" id="trend-staff" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="shield" style="width:12px; height:12px;"></i> Active</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-staff" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-staff">Just now</span></div>
+            </div>
+
+            <!-- 10. AI Confidence -->
+            <div class="card-kpi" id="kpi-ai">
+              <div class="kpi-header">
+                <span class="kpi-title">AI Confidence</span>
+                <div class="kpi-icon-wrapper"><i data-lucide="brain"></i></div>
+              </div>
+              <div class="kpi-value" id="val-ai">85%</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+                <span class="kpi-trend" id="trend-ai" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-primary); font-weight: 600;"><i data-lucide="sparkles" style="width:12px; height:12px;"></i> Synced</span>
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-primary); fill: none; stroke-width: 1.8;"><path id="spark-ai" d="M 0 15 L 100 15" /></svg>
+              </div>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-ai">Just now</span></div>
+            </div>
+
+          </div>
+
+          <!-- Middle Split Panel (Observations, Goals & Predictions) -->
+          <div class="dashboard-panels-split" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+            
+            <!-- Left panel: Smart Goals + Predictions + Radial Gauge -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              
+              <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem;">
+                <!-- Smart Goals Card -->
+                <div class="panel-container" style="padding: 1rem; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                  <div class="panel-header" style="margin-bottom: 0.5rem;">
+                    <h3 class="panel-title">Today's Smart Goal</h3>
+                    <span class="badge" style="background: rgba(212, 163, 115, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-size: 0.6rem; padding: 0.1rem 0.25rem; border-radius: 4px;">ACTIVE</span>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 0.75rem; border-radius: 12px; margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                      <span id="goal-active-type" style="font-weight: 700; color: #FFF; font-size: 0.85rem;">Reduce Wait Time</span>
+                      <span id="goal-active-progress" style="font-weight: 800; color: var(--color-primary); font-size: 0.85rem;">75%</span>
+                    </div>
+                    <div style="height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 0.35rem;">
+                      <div id="goal-progress-fill" style="width: 75%; height: 100%; background: var(--color-primary); border-radius: 3px; transition: width 0.6s ease;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted);">
+                      <span>ETA: <strong id="goal-active-eta">20:00</strong></span>
+                      <span>Target: &lt; 1.5 mins</span>
+                    </div>
+                  </div>
+                  <div style="font-size: 0.7rem; color: var(--text-secondary); border-left: 2px solid var(--color-primary); padding-left: 0.5rem; margin-top: 0.25rem;">
+                    <strong style="color: #FFF;">AI Strategy:</strong> <span id="goal-active-strategy">Optimize Emma to Espresso, Liam to registers.</span>
+                  </div>
+                </div>
+
+                <!-- Circular Radial Gauge -->
+                <div class="panel-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; height: 100%;">
+                  <h3 class="panel-title" style="margin-bottom: 0.5rem; font-size: 0.78rem; text-transform: uppercase; color: var(--text-secondary);">Café Performance</h3>
+                  <div style="position: relative; width: 90px; height: 90px;">
+                    <svg width="90" height="90" viewBox="0 0 90 90">
+                      <circle cx="45" cy="45" r="38" stroke="rgba(255,255,255,0.03)" stroke-width="6" fill="transparent" />
+                      <circle cx="45" cy="45" r="38" stroke="var(--color-primary)" stroke-width="6" fill="transparent" stroke-dasharray="238.7" stroke-dashoffset="60" id="radial-gauge-fill" style="transition: stroke-dashoffset 0.6s ease; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--color-primary-glow));" />
+                    </svg>
+                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                      <span id="radial-score-val" style="font-size: 1.45rem; font-weight: 800; font-family: var(--font-display); color: #FFF; line-height: 1;">88</span>
+                      <span style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">Score</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Predictions Deck -->
+              <div class="panel-container" style="padding: 1rem; flex-grow: 1;">
+                <h3 class="panel-title" style="margin-bottom: 0.75rem;">Predictive Telemetry</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                    <span style="color: var(--text-secondary);">Closing Revenue Forecast:</span>
+                    <strong style="color: var(--color-success);" id="pred-closing-revenue">$0.00 <span style="font-size: 0.65rem; font-weight: normal; color: var(--text-muted);">(85% conf)</span></strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                    <span style="color: var(--text-secondary);">Est. Queue in 30 Mins:</span>
+                    <strong style="color: var(--color-warning);" id="pred-queue-30m">0 students <span style="font-size: 0.65rem; font-weight: normal; color: var(--text-muted);">(91% conf)</span></strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                    <span style="color: var(--text-secondary);">Inventory exhaustion:</span>
+                    <strong style="color: var(--color-danger);" id="pred-inventory-remaining">12.0 hours <span style="font-size: 0.65rem; font-weight: normal; color: var(--text-muted);">(95% conf)</span></strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                    <span style="color: var(--text-secondary);">Expected Satisfaction:</span>
+                    <strong style="color: #FFF;" id="pred-satisfaction">90% <span style="font-size: 0.65rem; font-weight: normal; color: var(--text-muted);">(88% conf)</span></strong>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right panel: BrewMind Brain Insights -->
+            <div class="panel-container" style="display: flex; flex-direction: column; height: 100%;">
+              <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1rem;">🧠</span>
+                  <h3 class="panel-title">BrewMind Brain Observations</h3>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <label style="font-size: 0.68rem; color: var(--text-secondary);">Optimize Goal:</label>
+                  <select id="goal-select-dropdown" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.15rem 0.35rem; color: #FFF; font-size: 0.68rem; outline: none; cursor: pointer; height: 26px;">
+                    <option value="Reduce Wait Time">Reduce Wait Time</option>
+                    <option value="Maximize Revenue">Maximize Revenue</option>
+                    <option value="Minimize Waste">Minimize Waste</option>
+                    <option value="Increase Satisfaction">Increase Satisfaction</option>
+                    <option value="Improve Reputation">Improve Reputation</option>
+                  </select>
+                </div>
+              </div>
+              <div id="brain-observations-container" style="flex-grow: 1; overflow-y: auto; max-height: 230px; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
+                <!-- Insights list generated by Brain.js -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Split Panel (Hourly Journal + Timeline & Best Sellers) -->
+          <div class="dashboard-panels-split" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.25rem;">
+            
+            <!-- Left panel: Daily Operations Journal -->
+            <div class="panel-container" style="display: flex; flex-direction: column;">
+              <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <i data-lucide="book-open" style="width: 14px; height: 14px; color: var(--color-primary);"></i>
+                  <h3 class="panel-title">Daily Operations Journal</h3>
+                </div>
+              </div>
+              <div id="operations-journal-container" style="flex-grow: 1; overflow-y: auto; max-height: 220px; display: flex; flex-direction: column; gap: 0.6rem;">
+                <p style="font-size: 0.72rem; color: var(--text-muted); text-align: center; margin-top: 1.5rem;">No journal entries compiled yet. Writes hourly logs.</p>
+              </div>
+            </div>
+
+            <!-- Right panel: Best Sellers -->
+            <div class="panel-container" style="display: flex; flex-direction: column;">
+              <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                <h3 class="panel-title">Product Intelligence</h3>
+              </div>
+              <div style="overflow-y: auto; max-height: 220px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.72rem; text-align: left;" id="best-sellers-table">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--glass-border); color: var(--text-muted);">
+                      <th style="padding: 0.35rem 0;">Product</th>
+                      <th style="padding: 0.35rem 0; text-align: right;">Sales</th>
+                      <th style="padding: 0.35rem 0; text-align: right;">Revenue</th>
+                      <th style="padding: 0.35rem 0; text-align: right;">Demand Factor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Populated live on statechange -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Active Operations Activity Feed (Timeline) -->
+          <div class="panel-container" style="margin-top: 1.25rem;">
+            <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+              <h3 class="panel-title">Live Operations Activity Log</h3>
+              <span class="panel-action" id="action-view-twin">Go to Digital Twin</span>
+            </div>
+            <div id="operations-timeline" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.25rem;">
+              <!-- Timeline operations list -->
+            </div>
+          </div>
+
+        </section>
+
+        <!-- View 2: Digital Twin -->
+        <section id="view-twin" class="view-section">
+          <div class="panel-container" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="panel-header">
+              <h3 class="panel-title">Real-time Campus Café Digital Twin</h3>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-secondary" id="btn-twin-reset">Reset Scene</button>
+              </div>
+            </div>
+            <div class="placeholder-graphic" style="flex-grow: 1; height: auto;">
+              <i data-lucide="layers" style="width: 48px; height: 48px;"></i>
+              <p>Digital Twin Environment Visualizer</p>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">Connecting to Digital Twin sensor nodes...</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 3: Inventory -->
+        <section id="view-inventory" class="view-section">
+          <div class="panel-container" style="height: 100%;">
+            <div class="panel-header">
+              <h3 class="panel-title">Smart Inventory & Predictive Replenishment</h3>
+              <button class="btn-primary" id="btn-inventory-restock">Quick Restock All</button>
+            </div>
+            <div class="placeholder-graphic" style="height: calc(100% - 60px);">
+              <i data-lucide="box" style="width: 48px; height: 48px;"></i>
+              <p>Predictive depletion analysis initializing...</p>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">Compiling ingredient consumption coefficients...</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 4: Analytics -->
+        <section id="view-analytics" class="view-section">
+          <div class="panel-container" style="height: 100%;">
+            <div class="panel-header">
+              <h3 class="panel-title">Performance Analytics Dashboard</h3>
+              <button class="btn-secondary" id="btn-analytics-export">Export Logs</button>
+            </div>
+            <div class="placeholder-graphic" style="height: calc(100% - 60px);">
+              <i data-lucide="line-chart" style="width: 48px; height: 48px;"></i>
+              <p>Analytics graphics loading...</p>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">Generating Chart.js analytics curves...</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 5: Scenario Sandbox -->
+        <section id="view-scenarios" class="view-section">
+          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; height: 100%;">
+            
+            <!-- Left Column: Scenario Selectors & Custom Builders -->
+            <div style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; padding-right: 5px;">
+              <div class="panel-container">
+                <div class="panel-header" style="margin-bottom: 0.75rem;">
+                  <h3 class="panel-title">Operational Scenarios</h3>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Select a pre-packaged simulation model or configure custom modifiers below to forecast operational results.</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <!-- Scenario Cards -->
+                  <div class="brain-insight-card scenario-select-card" data-scenario="rain" style="cursor: pointer; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;">
+                    <i data-lucide="cloud-rain" style="color: var(--color-info); width: 20px; height: 20px;"></i>
+                    <div style="flex-grow: 1;">
+                      <div style="font-size: 0.8rem; font-weight: 700; color: #FFF;">Rainy Day</div>
+                      <div style="font-size: 0.68rem; color: var(--text-secondary);">Increases hot drinks demand by 40%, decreases cold items.</div>
+                    </div>
+                  </div>
+
+                  <div class="brain-insight-card scenario-select-card" data-scenario="exams" style="cursor: pointer; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;">
+                    <i data-lucide="book-open" style="color: var(--color-warning); width: 20px; height: 20px;"></i>
+                    <div style="flex-grow: 1;">
+                      <div style="font-size: 0.8rem; font-weight: 700; color: #FFF;">Exam Week Rush</div>
+                      <div style="font-size: 0.68rem; color: var(--text-secondary);">Increases arrival rates by 50%, baristas fatigue 20% faster.</div>
+                    </div>
+                  </div>
+
+                  <div class="brain-insight-card scenario-select-card" data-scenario="festival" style="cursor: pointer; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;">
+                    <i data-lucide="party-popper" style="color: var(--color-primary); width: 20px; height: 20px;"></i>
+                    <div style="flex-grow: 1;">
+                      <div style="font-size: 0.8rem; font-weight: 700; color: #FFF;">Campus Festival</div>
+                      <div style="font-size: 0.68rem; color: var(--text-secondary);">Double incoming foot traffic and boosts student order budgets.</div>
+                    </div>
+                  </div>
+
+                  <div class="brain-insight-card scenario-select-card" data-scenario="outage" style="cursor: pointer; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;">
+                    <i data-lucide="zap-off" style="color: var(--color-danger); width: 20px; height: 20px;"></i>
+                    <div style="flex-grow: 1;">
+                      <div style="font-size: 0.8rem; font-weight: 700; color: #FFF;">Power Outage</div>
+                      <div style="font-size: 0.68rem; color: var(--text-secondary);">Both espresso machines fail. Prepare state halts completely.</div>
+                    </div>
+                  </div>
+
+                  <div class="brain-insight-card scenario-select-card" data-scenario="barista" style="cursor: pointer; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;">
+                    <i data-lucide="user-plus" style="color: var(--color-success); width: 20px; height: 20px;"></i>
+                    <div style="flex-grow: 1;">
+                      <div style="font-size: 0.8rem; font-weight: 700; color: #FFF;">Hire Temporary Barista</div>
+                      <div style="font-size: 0.68rem; color: var(--text-secondary);">Adds a dynamically spawned helper (Junior/Mid/Senior) to service.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Custom Builder -->
+              <div class="panel-container">
+                <div class="panel-header" style="margin-bottom: 0.5rem;">
+                  <h3 class="panel-title" style="font-size: 0.9rem;">Custom Scenario Sandbox Builder</h3>
+                </div>
+                <form id="custom-scenario-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                      <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600;">Arrival Rate Factor</label>
+                      <input type="number" id="custom-arrival-factor" step="0.1" min="0.1" max="5.0" value="1.0" class="chat-input" style="height: 32px; font-size: 0.75rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 0 0.5rem; border-radius: 6px;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                      <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600;">Latte Price Adjustment</label>
+                      <input type="number" id="custom-price-adj" step="0.05" min="-2.0" max="5.0" value="0.0" class="chat-input" style="height: 32px; font-size: 0.75rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 0 0.5rem; border-radius: 6px;">
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600;">Supply Delay (sim minutes)</label>
+                    <input type="number" id="custom-supply-delay" value="0" min="0" max="180" class="chat-input" style="height: 32px; font-size: 0.75rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 0 0.5rem; border-radius: 6px;">
+                  </div>
+                  <button type="submit" class="btn-primary" style="height: 34px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; margin-top: 0.4rem;">
+                    <i data-lucide="play" style="width: 13px; height: 13px;"></i>
+                    <span>Execute Custom Sandbox Simulation</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Right Column: Results comparison & charts -->
+            <div style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto;">
+              <div class="panel-container" style="flex-grow: 1; display: flex; flex-direction: column;">
+                <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="btn-badge" style="background: var(--color-warning); color: #000; font-weight: 700; font-size: 0.65rem; border-radius: 4px; display: inline-block; padding: 0.15rem 0.4rem; transform: none; position: static;">Sandbox Simulation</span>
+                    <h3 class="panel-title" id="sandbox-title-display">Select a Scenario Model</h3>
+                  </div>
+                </div>
+
+                <div id="sandbox-assumptions-container" style="display: none; background: rgba(212,163,115,0.03); border: 1px solid var(--glass-border); padding: 0.75rem 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                  <h4 style="font-size: 0.75rem; color: var(--color-primary); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.3rem;"><i data-lucide="info" style="width: 12px; height: 12px;"></i> Sandbox Assumptions</h4>
+                  <ul id="sandbox-assumptions-list" style="font-size: 0.68rem; color: var(--text-secondary); padding-left: 1rem; line-height: 1.4;">
+                    <li>Weather remains unchanged</li>
+                  </ul>
+                </div>
+
+                <!-- Comparison Cards Grid -->
+                <div id="sandbox-comparison-grid" style="display: none; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
+                  <div class="brain-insight-card" style="padding: 0.6rem 0.8rem; text-align: center;">
+                    <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.2rem;">Projected Revenue</div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #FFF; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                      <span id="sb-rev-curr">$0</span> ➔ <span id="sb-rev-pred" style="color:var(--color-primary);">$0</span>
+                    </div>
+                    <span id="sb-rev-diff" style="font-size:0.65rem; font-weight:700;">+0%</span>
+                  </div>
+
+                  <div class="brain-insight-card" style="padding: 0.6rem 0.8rem; text-align: center;">
+                    <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.2rem;">Avg Queue Size</div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #FFF; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                      <span id="sb-q-curr">0</span> ➔ <span id="sb-q-pred" style="color:var(--color-primary);">0</span>
+                    </div>
+                    <span id="sb-q-diff" style="font-size:0.65rem; font-weight:700;">0</span>
+                  </div>
+
+                  <div class="brain-insight-card" style="padding: 0.6rem 0.8rem; text-align: center;">
+                    <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.2rem;">Satisfaction</div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #FFF; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                      <span id="sb-sat-curr">0%</span> ➔ <span id="sb-sat-pred" style="color:var(--color-primary);">0%</span>
+                    </div>
+                    <span id="sb-sat-diff" style="font-size:0.65rem; font-weight:700;">0%</span>
+                  </div>
+                </div>
+
+                <div id="sandbox-charts-container" style="flex-grow: 1; min-height: 180px; position: relative; display: none; margin-bottom: 1rem;">
+                  <canvas id="chart-sandbox-comparison"></canvas>
+                </div>
+
+                <div id="sandbox-prompt-box" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.6; text-align: center; padding: 2rem;">
+                  <i data-lucide="play-circle" style="width: 48px; height: 48px; margin-bottom: 0.75rem; color: var(--text-muted);"></i>
+                  <p style="font-size: 0.85rem; font-weight: 600; color: #FFF;">Sandbox Visualizer Standby</p>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">Select a scenario on the left to trigger the background What-If Sandbox.</span>
+                </div>
+
+                <!-- Footer Sandbox deployment triggers -->
+                <div id="sandbox-footer-controls" style="display: none; border-top: 1px solid var(--glass-border); padding-top: 1rem; justify-content: space-between; align-items: center;">
+                  <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; flex-direction: column;">
+                    <span>AI Model Confidence: <strong id="sb-confidence-val" style="color: var(--color-success);">HIGH (94%)</strong></span>
+                    <span>Expected ROI: <strong id="sb-roi-val" style="color: var(--color-primary);">--</strong></span>
+                  </div>
+                  <button class="btn-primary" id="btn-deploy-sandbox" style="height: 36px; display: flex; align-items: center; gap: 0.4rem; background: linear-gradient(135deg, var(--color-primary), #A7734E);">
+                    <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                    <span>Deploy to Live Twin</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- View 6: Settings -->
+        <section id="view-settings" class="view-section">
+          <div class="panel-container" style="max-width: 600px; margin: 0 auto;">
+            <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+              <h3 class="panel-title">Store Settings & Configuration</h3>
+            </div>
+            
+            <form id="settings-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Manager Display Name</label>
+                  <input type="text" id="input-manager-name" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" value="Alex" required>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Campus Café Name</label>
+                  <input type="text" id="input-cafe-name" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" value="BrewMind HQ" required>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Store Type</label>
+                  <select id="input-store-type" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none; height: 38px;">
+                    <option value="Standard">Standard Café</option>
+                    <option value="Boutique">Boutique Specialty</option>
+                    <option value="Drive-Thru">Drive-Thru Express</option>
+                    <option value="Roastery">Industrial Roastery</option>
+                  </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">City</label>
+                  <input type="text" id="input-city" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" value="San Francisco" required>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Operating Hours</label>
+                  <input type="text" id="input-hours" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" value="06:00 AM - 08:00 PM" required>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Preferred UI Theme</label>
+                  <select id="input-theme" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none; height: 38px;">
+                    <option value="dark-coffee">Espresso Bronze (Brand)</option>
+                    <option value="dark-modern">Obsidian Modern (SaaS)</option>
+                    <option value="latte-light">Cappuccino Light (Cream)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">AI Provider</label>
+                  <select id="input-ai-provider" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none; height: 38px;">
+                    <option value="gemini">Gemini API</option>
+                    <option value="openai">OpenAI Compatible API</option>
+                    <option value="lm-studio">LM Studio (Local)</option>
+                    <option value="ollama">Ollama (Local)</option>
+                  </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">API Endpoint / URL</label>
+                  <input type="text" id="input-ai-endpoint" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" placeholder="e.g. http://127.0.0.1:1234 (auto-adds /v1/chat/completions)">
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">API Key (If required)</label>
+                <input type="password" id="input-gemini-key" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" placeholder="Enter key (leave blank for local Ollama / LM Studio)">
+              </div>
+
+              <div style="display: flex; gap: 1.5rem; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 0.75rem 1rem; border-radius: 12px; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+                  <input type="checkbox" id="input-sound-enabled" checked style="accent-color: var(--color-primary);">
+                  <span>Enable Audio Effects</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+                  <input type="checkbox" id="input-voice-enabled" style="accent-color: var(--color-primary);">
+                  <span>Enable Copilot Voice Feedback</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+                  <input type="checkbox" id="input-notifications-muted" style="accent-color: var(--color-primary);">
+                  <span>Mute Toast Notifications</span>
+                </label>
+              </div>
+
+              <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn-primary">Save Profile Configuration</button>
+                <button type="button" class="btn-secondary" id="btn-sound-test">Test Audio Alerts</button>
+                <button type="button" class="btn-secondary" id="btn-reset-all" style="background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); color: var(--color-danger);">Reset Storage</button>
+              </div>
+            </form>
+
+            <!-- AI Memory Inspector & Telemetry Console -->
+            <div style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 2rem;">
+              <div class="panel-header" style="margin-bottom: 1rem;">
+                <h3 class="panel-title" style="font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <i data-lucide="brain-circuit" style="width: 18px; height: 18px;"></i>
+                  <span>AI Memory & Telemetry Inspector</span>
+                </h3>
+                <div id="local-ai-badge" style="font-size: 0.72rem; color: var(--text-secondary); background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 0.4rem 0.8rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.2rem;">
+                  <span id="local-ai-connection-status">🔴 Local AI Offline</span>
+                </div>
+              </div>
+              
+              <!-- Tabs for categories -->
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                <button type="button" class="btn-secondary memory-tab active" data-cat="short-term" style="height: 28px; font-size: 0.72rem; padding: 0 0.75rem;">Short-Term Memory</button>
+                <button type="button" class="btn-secondary memory-tab" data-cat="session" style="height: 28px; font-size: 0.72rem; padding: 0 0.75rem;">Session Memory</button>
+                <button type="button" class="btn-secondary memory-tab" data-cat="long-term" style="height: 28px; font-size: 0.72rem; padding: 0 0.75rem;">Long-Term Memory</button>
+              </div>
+
+              <!-- Memory List Container -->
+              <div id="memory-items-container" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 5px;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); text-align: center; padding: 1.5rem 0;">
+                  Selecting memory nodes...
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- --- Floating Drawers & Controllers --- -->
+
+  <!-- Floating Action Buttons -->
+  <div class="floating-actions-container">
+    <!-- Copilot Toggle -->
+    <div class="float-btn float-btn-copilot" id="float-copilot-trigger" title="Toggle AI Copilot Interface">
+      <i data-lucide="message-square"></i>
+      <span class="float-label">Consult AI Copilot</span>
+    </div>
+    <!-- Demo Controller Toggle -->
+    <div class="float-btn float-btn-demo" id="float-demo-trigger" title="Toggle Simulation Demo Controller">
+      <i data-lucide="sliders"></i>
+      <span class="float-label">Simulation Controller</span>
+    </div>
+  </div>
+
+  <!-- AI Copilot Drawer -->
+  <div class="copilot-drawer" id="copilot-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title-area">
+        <i data-lucide="brain-circuit"></i>
+        <h3 class="drawer-title">BrewMind Copilot</h3>
+      </div>
+      <button class="drawer-close" id="copilot-drawer-close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    
+    <div class="drawer-body">
+      <div class="copilot-chat-history" id="copilot-chat-history">
+        <div class="chat-bubble assistant">
+          Hello! I am BrewMind, your AI Operations Copilot. How can I help optimize your campus café operations today?
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="chat-input-wrapper">
+        <input type="text" class="chat-input" id="copilot-user-input" placeholder="Type a message or click mic...">
+        <button class="chat-action-btn" id="btn-copilot-voice" title="Speech to Text Input">
+          <i data-lucide="mic"></i>
+        </button>
+        <button class="chat-action-btn send" id="btn-copilot-send" title="Send Message">
+          <i data-lucide="arrow-up"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo Scenarios Drawer Dock -->
+  <div class="demo-drawer" id="demo-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title-area">
+        <i data-lucide="activity"></i>
+        <h3 class="drawer-title">Simulation Scenario Controller</h3>
+      </div>
+      <button class="drawer-close" id="demo-drawer-close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    
+    <div class="demo-grid">
+      
+      <div class="demo-card" data-scenario="morning-rush">
+        <div class="demo-card-icon"><i data-lucide="coffee"></i></div>
+        <div class="demo-card-title">Morning Rush</div>
+        <div class="demo-card-desc">Increases incoming student arrival rate, stressing baristas and testing capacity limits.</div>
+      </div>
+
+      <div class="demo-card" data-scenario="machine-failure">
+        <div class="demo-card-icon"><i data-lucide="zap-off"></i></div>
+        <div class="demo-card-title">Machine Failure</div>
+        <div class="demo-card-desc">Breaks an espresso machine, causing queues to lock and satisfaction to plunge.</div>
+      </div>
+
+      <div class="demo-card" data-scenario="employee-late">
+        <div class="demo-card-icon"><i data-lucide="user-x"></i></div>
+        <div class="demo-card-title">Employee Late</div>
+        <div class="demo-card-desc">Lowers service capacity and increases average preparation bottlenecks.</div>
+      </div>
+
+      <div class="demo-card" data-scenario="inventory-crisis">
+        <div class="demo-card-icon"><i data-lucide="box-select"></i></div>
+        <div class="demo-card-title">Inventory Crisis</div>
+        <div class="demo-card-desc">Simulates running out of milk or cups, forcing stockout warnings.</div>
+      </div>
+
+      <div class="demo-card" data-scenario="rainy-day">
+        <div class="demo-card-icon"><i data-lucide="cloud-rain"></i></div>
+        <div class="demo-card-title">Rainy Day</div>
+        <div class="demo-card-desc">Decreases overall volume, but spikes demand for warm specialty drinks.</div>
+      </div>
+
+      <div class="demo-card" data-scenario="reset">
+        <div class="demo-card-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--color-danger);"><i data-lucide="refresh-cw"></i></div>
+        <div class="demo-card-title" style="color: var(--color-danger);">Reset Simulation</div>
+        <div class="demo-card-desc">Restores the environment state and metrics to normal operation.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Onboarding Experience Overlay -->
+  <div id="onboarding-overlay" style="position: fixed; inset: 0; background: rgba(5, 3, 2, 0.95); backdrop-filter: blur(12px); z-index: 9995; display: none; align-items: center; justify-content: center;">
+    <div class="panel-container" style="width: 500px; max-width: 90vw; background: linear-gradient(135deg, rgba(30, 24, 20, 0.9), rgba(15, 12, 10, 0.9)); border: 1px solid var(--glass-border); border-radius: 28px; padding: 2.5rem; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <i data-lucide="coffee" style="width: 48px; height: 48px; color: var(--color-primary); filter: drop-shadow(0 0 10px var(--color-primary-glow));"></i>
+        <h2 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; margin-top: 0.75rem;">Welcome to BrewMind AI</h2>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">Let's customize your campus café's digital twin.</p>
+      </div>
+
+      <form id="onboarding-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Manager Name</label>
+            <input type="text" id="onboard-manager-name" placeholder="e.g. Alex" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none;" required>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Café Name</label>
+            <input type="text" id="onboard-cafe-name" placeholder="e.g. BrewMind HQ" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none;" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Store Type</label>
+            <select id="onboard-store-type" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none; height: 38px;">
+              <option value="Standard">Standard Café</option>
+              <option value="Boutique">Boutique Specialty</option>
+              <option value="Drive-Thru">Drive-Thru Express</option>
+              <option value="Roastery">Industrial Roastery</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">City</label>
+            <input type="text" id="onboard-city" placeholder="e.g. Seattle" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none;" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Operating Hours</label>
+            <input type="text" id="onboard-hours" placeholder="e.g. 06:00 AM - 08:00 PM" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none;" required>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Preferred Theme</label>
+            <select id="onboard-theme" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none; height: 38px;">
+              <option value="dark-coffee">Espresso Bronze (Brand)</option>
+              <option value="dark-modern">Obsidian Modern (SaaS)</option>
+              <option value="latte-light">Cappuccino Light (Cream)</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top: 1rem; height: 42px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+          <span>Initialize Operations Twin</span>
+          <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Floating background particles -->
+  <div class="particles-container" id="particles-container">
+    <div class="particle p1"></div>
+    <div class="particle p2"></div>
+    <div class="particle p3"></div>
+    <div class="particle p4"></div>
+    <div class="particle p5"></div>
+    <div class="particle p6"></div>
+    <div class="particle p7"></div>
+    <div class="particle p8"></div>
+  </div>
+
+  <!-- Toasts Notification Stack Wrapper -->
+  <div id="toast-container"></div>
+
+  <!-- Application Modules Entry Point -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
