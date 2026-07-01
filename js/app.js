@@ -976,6 +976,7 @@ class AppController {
       const hours = document.getElementById('input-hours').value.trim();
       const theme = document.getElementById('input-theme').value;
       const key = document.getElementById('input-gemini-key').value.trim();
+      const model = document.getElementById('input-ai-model')?.value.trim() || '';
       
       const provider = document.getElementById('input-ai-provider').value;
       const endpoint = document.getElementById('input-ai-endpoint').value.trim();
@@ -991,9 +992,11 @@ class AppController {
         storeType: type,
         city: city,
         operatingHours: hours,
+        apiKey: key,
         geminiKey: key,
         aiProvider: provider,
-        aiEndpoint: endpoint
+        aiEndpoint: endpoint,
+        aiModel: model
       });
 
       memory.updatePreferences({
@@ -1105,7 +1108,7 @@ class AppController {
    * Syncs UI fields with cached profile states
    */
   applyProfileToUI() {
-    const { managerName, cafeName, storeType, city, operatingHours, geminiKey, aiProvider, aiEndpoint } = memory.profile;
+    const { managerName, cafeName, storeType, city, operatingHours, apiKey, geminiKey, aiProvider, aiEndpoint, aiModel } = memory.profile;
     const { theme, soundEnabled, voiceEnabled, notificationsMuted } = memory.preferences;
 
     // Header greeting text
@@ -1135,6 +1138,7 @@ class AppController {
     const kInput = document.getElementById('input-gemini-key');
     const pSelect = document.getElementById('input-ai-provider');
     const epInput = document.getElementById('input-ai-endpoint');
+    const modelInput = document.getElementById('input-ai-model');
     const soundCheck = document.getElementById('input-sound-enabled');
     const voiceCheck = document.getElementById('input-voice-enabled');
     const notifCheck = document.getElementById('input-notifications-muted');
@@ -1145,9 +1149,10 @@ class AppController {
     if (cityInput) cityInput.value = city;
     if (hoursInput) hoursInput.value = operatingHours;
     if (themeSelect) themeSelect.value = theme;
-    if (kInput) kInput.value = geminiKey;
-    if (pSelect) pSelect.value = aiProvider || 'gemini';
+    if (kInput) kInput.value = apiKey || geminiKey || '';
+    if (pSelect) pSelect.value = aiProvider || 'lm-studio';
     if (epInput) epInput.value = aiEndpoint || '';
+    if (modelInput) modelInput.value = aiModel || '';
     if (soundCheck) soundCheck.checked = soundEnabled;
     if (voiceCheck) voiceCheck.checked = voiceEnabled;
     if (notifCheck) notifCheck.checked = notificationsMuted || false;

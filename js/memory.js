@@ -18,9 +18,11 @@ const DEFAULT_PROFILE = {
   storeType: 'Standard', // Standard, Boutique, Drive-Thru, Roastery
   operatingHours: '06:00 AM - 08:00 PM',
   city: 'San Francisco',
-  geminiKey: '',
+  apiKey: '',
+  geminiKey: '', // Legacy field retained for existing saved profiles.
   aiProvider: 'lm-studio',
-  aiEndpoint: 'http://127.0.0.1:1234'
+  aiEndpoint: '',
+  aiModel: ''
 };
 
 const DEFAULT_PREFERENCES = {
@@ -215,7 +217,7 @@ class MemoryManager {
       const acceptedList = this.acceptedRecommendations.map(r => ({ id: r.id, type: 'Accepted Recommendation', desc: `Applied: ${r.details.title || r.details.recommendation || 'Operational adjustment'}` }));
       const rejectedList = this.rejectedRecommendations.map(r => ({ id: r.id, type: 'Rejected Recommendation', desc: `Dismissed: ${r.details.title || r.details.recommendation || 'Operational adjustment'}` }));
       const profileInfo = [{ id: 'profile_settings', type: 'AI Manager Profile', desc: `Cafe: ${this.profile.cafeName || 'Not Set'} &bull; Manager: ${this.profile.managerName || 'Not Set'}` }];
-      const providerInfo = [{ id: 'ai_settings', type: 'AI Settings', desc: `Provider: ${this.profile.aiProvider || 'gemini'} &bull; Endpoint: ${this.profile.aiEndpoint || 'Default'}` }];
+      const providerInfo = [{ id: 'ai_settings', type: 'AI Settings', desc: `Provider: ${this.profile.aiProvider || 'lm-studio'} &bull; Model: ${this.profile.aiModel || 'Auto'} &bull; Endpoint: ${this.profile.aiEndpoint || 'Default'}` }];
 
       return [...acceptedList, ...rejectedList, ...profileInfo, ...providerInfo];
     }

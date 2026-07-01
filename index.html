@@ -998,20 +998,26 @@
                   <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">AI Provider</label>
                   <select id="input-ai-provider" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none; height: 38px;">
                     <option value="gemini">Gemini API</option>
-                    <option value="openai">OpenAI Compatible API</option>
+                    <option value="openai">ChatGPT / OpenAI Compatible API</option>
                     <option value="lm-studio">LM Studio (Local)</option>
                     <option value="ollama">Ollama (Local)</option>
                   </select>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                   <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">API Endpoint / URL</label>
-                  <input type="text" id="input-ai-endpoint" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" placeholder="e.g. http://127.0.0.1:1234 (auto-adds /v1/chat/completions)">
+                  <input type="text" id="input-ai-endpoint" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" placeholder="Gemini/OpenAI can stay blank; local uses http://127.0.0.1:1234">
                 </div>
               </div>
 
-              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">API Key (If required)</label>
-                <input type="password" id="input-gemini-key" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" placeholder="Enter key (leave blank for local Ollama / LM Studio)">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">API Key (Gemini/OpenAI)</label>
+                  <input type="password" id="input-gemini-key" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" placeholder="Leave blank for local Ollama / LM Studio">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Model Name</label>
+                  <input type="text" id="input-ai-model" class="chat-input" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem;" placeholder="Gemini: gemini-2.0-flash | OpenAI: gpt-4o-mini">
+                </div>
               </div>
 
               <div style="display: flex; gap: 1.5rem; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 0.75rem 1rem; border-radius: 12px; flex-wrap: wrap;">

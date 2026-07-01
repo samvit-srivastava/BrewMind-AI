@@ -409,7 +409,7 @@ class AICopilot {
     if (!badgeEl) return;
 
     if (aiProvider !== 'lm-studio' && aiProvider !== 'ollama') {
-      const hasKey = !!memory.profile.geminiKey;
+      const hasKey = !!this.getConfiguredApiKey();
       if (hasKey) {
         badgeEl.innerHTML = `<strong style="color:var(--color-success);">🟢 Cloud API Ready</strong><br/>Provider: ${aiProvider === 'openai' ? 'OpenAI' : 'Gemini'}<br/>Status: API Key Configured`;
       } else {
@@ -474,6 +474,26 @@ class AICopilot {
     }
   }
 
+  getConfiguredApiKey() {
+    return (memory.profile.apiKey || memory.profile.geminiKey || '').trim();
+  }
+
+  getProviderLabel(provider) {
+    if (provider === 'gemini') return 'Gemini';
+    if (provider === 'openai') return 'OpenAI';
+    if (provider === 'lm-studio') return 'LM Studio';
+    if (provider === 'ollama') return 'Ollama';
+    return 'AI';
+  }
+
+  getDefaultModel(provider) {
+    if (provider === 'gemini') return 'gemini-2.0-flash';
+    if (provider === 'openai') return 'gpt-4o-mini';
+    if (provider === 'ollama') return this.detectedLocalModel || 'llama3';
+    if (provider === 'lm-studio') return this.detectedLocalModel || 'local-model';
+    return 'gpt-4o-mini';
+  }
+
   /**
    * Simple markdown to HTML converter for chat bubbles.
    */
@@ -527,7 +547,7 @@ class AICopilot {
 
     const { aiProvider } = memory.profile;
     const isLocalAI = (aiProvider === 'lm-studio' || aiProvider === 'ollama');
-    const aiLabel = aiProvider === 'lm-studio' ? 'LM Studio' : aiProvider === 'ollama' ? 'Ollama' : aiProvider === 'gemini' ? 'Gemini' : 'AI';
+    const aiLabel = this.getProviderLabel(aiProvider);
 
     const typingBubble = document.createElement('div');
     typingBubble.className = 'chat-bubble assistant typing-dots';
@@ -565,9 +585,15 @@ class AICopilot {
         // If CORS/Connection is the issue, show specific instructions
         const isCORS = e.message?.includes('Cannot reach') || e.message?.includes('CORS') || this._corsBlocked;
         if (isCORS && (aiProvider === 'lm-studio' || aiProvider === 'ollama')) {
-          const corsMsg = `**⚠ ${aiLabel} Connection Blocked (CORS)**\n\nYour ${aiLabel} server is running but the browser is blocking the connection.\n\n**To fix this (takes 10 seconds):**\n1. Open **${aiLabel}**\n2. Click **"Server Settings"** (top bar)\n3. Enable **"Enable CORS"** toggle\n4. **Refresh this page**\n\nOnce CORS is enabled, I'll use ${aiLabel}'s **${this.detectedLocalModel || 'loaded model'}** for all responses!`;
+          const corsMsg = `**âš  ${aiLabel} Connection Blocked (CORS)**\n\nYour ${aiLabel} server is running but the browser is blocking the connection.\n\n**To fix this (takes 10 seconds):**\n1. Open **${aiLabel}**\n2. Click **"Server Settings"** (top bar)\n3. Enable **"Enable CORS"** toggle\n4. **Refresh this page**\n\nOnce CORS is enabled, I'll use ${aiLabel}'s **${this.detectedLocalModel || 'loaded model'}** for all responses!`;
           this.addChatBubble('assistant', corsMsg, 'local');
           memory.saveChatMessage('assistant', corsMsg);
+        } else if (aiProvider === 'gemini' || aiProvider === 'openai') {
+          const cloudMsg = `**${aiLabel} API unavailable**\n\n${e.message || 'The cloud model request could not be completed.'}\n\nUsing BrewMind's built-in operations reasoning for this answer.`;
+          this.addChatBubble('assistant', cloudMsg, 'local');
+          const reply = this.generateLocalRuleResponse(userPrompt);
+          this.addChatBubble('assistant', reply, 'local');
+          memory.saveChatMessage('assistant', reply);
         } else {
           // Seamless local fallback
           const reply = this.generateLocalRuleResponse(userPrompt);
@@ -617,8 +643,10 @@ class AICopilot {
    * Supports: Gemini API, LM Studio, Ollama, OpenAI-compatible
    */
   async fetchAIResponse(userPrompt) {
-    const { aiProvider, aiEndpoint, geminiKey } = memory.profile;
+    const { aiProvider, aiEndpoint, aiModel } = memory.profile;
     const provider = aiProvider || 'lm-studio';
+    const apiKey = this.getConfiguredApiKey();
+    const configuredModel = (aiModel || '').trim();
     
     // Build a rich, live state snapshot for AI context
     const state = window.BrewMind.getState();
@@ -669,11 +697,11 @@ OUTPUT STYLE:
 ${stateContext}`;
 
     if (provider === 'gemini') {
-      const key = geminiKey || '';
-      if (!key) {
+      if (!apiKey) {
         throw new Error("No Gemini API key configured.");
       }
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+      const modelName = configuredModel || this.getDefaultModel(provider);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 25000);
       let response;
@@ -703,7 +731,10 @@ ${stateContext}`;
     }
 
     // --- OpenAI-Compatible Providers: LM Studio, Ollama, OpenAI ---
-    let baseUrl = (aiEndpoint || (provider === 'ollama' ? 'http://127.0.0.1:11434' : 'http://127.0.0.1:1234')).replace(/\/+$/, '');
+    const defaultEndpoint = provider === 'openai' ? 'https://api.openai.com' : (provider === 'ollama' ? 'http://127.0.0.1:11434' : 'http://127.0.0.1:1234');
+    const configuredEndpoint = (aiEndpoint || '').trim();
+    const isLegacyLocalDefault = provider === 'openai' && /^https?:\/\/(127\.0\.0\.1|localhost):1234\/?$/i.test(configuredEndpoint);
+    let baseUrl = (isLegacyLocalDefault ? defaultEndpoint : (configuredEndpoint || defaultEndpoint)).replace(/\/+$/, '');
     
     baseUrl = baseUrl.replace(/\/v1\/chat\/completions\/?$/, '')
                      .replace(/\/chat\/completions\/?$/, '')
@@ -712,16 +743,14 @@ ${stateContext}`;
     const finalUrl = `${baseUrl}/v1/chat/completions`;
 
     const headers = { 'Content-Type': 'application/json' };
-    if (geminiKey && provider === 'openai') {
-      headers['Authorization'] = `Bearer ${geminiKey}`;
+    if (apiKey && provider === 'openai') {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+    if (provider === 'openai' && !apiKey) {
+      throw new Error('No OpenAI API key configured.');
     }
 
-    let modelName = 'gpt-3.5-turbo';
-    if (provider === 'lm-studio') {
-      modelName = this.detectedLocalModel || 'local-model';
-    } else if (provider === 'ollama') {
-      modelName = this.detectedLocalModel || 'llama3';
-    }
+    let modelName = configuredModel || this.getDefaultModel(provider);
 
     const payload = {
       model: modelName,
@@ -754,6 +783,11 @@ ${stateContext}`;
         throw new Error("AI request timed out. Local model is too slow.");
       }
       
+      if (provider === 'openai') {
+        clearTimeout(timeoutId);
+        throw new Error('Cannot reach OpenAI API. Browser CORS may block direct OpenAI calls; use an OpenAI-compatible proxy endpoint if this happens.');
+      }
+
       console.warn("Standard POST request failed. Retrying with simple Content-Type to bypass CORS preflight...", fetchErr);
       try {
         // Retry with Content-Type: text/plain to bypass OPTIONS preflight
@@ -810,8 +844,8 @@ ${stateContext}`;
 
     // --- Intent 1: AI / System Diagnostics ---
     if (p.includes('lm studio') || p.includes('lmstudio') || p.includes('ollama') || p.includes('api') || p.includes('ai status') || p.includes('connected') || p.includes('working')) {
-      const { aiProvider, aiEndpoint, geminiKey } = memory.profile;
-      const hasKey = !!geminiKey;
+      const { aiProvider, aiEndpoint } = memory.profile;
+      const hasKey = !!this.getConfiguredApiKey();
       const isLocal = aiProvider === 'lm-studio' || aiProvider === 'ollama';
       const providerLabel = aiProvider === 'lm-studio' ? 'LM Studio' : 'Ollama';
       const modelDetected = this.detectedLocalModel;
@@ -825,7 +859,7 @@ ${stateContext}`;
       } else if (hasKey) {
         return `### ⚙ AI System Diagnostics: Cloud Active\n\nI am connected to the cloud **${aiProvider === 'openai' ? 'OpenAI' : 'Gemini'} API**. Live telemetry tokens are actively feeding the model.`;
       } else {
-        return `### ⚙ AI System Diagnostics: Heuristic Mode\n\nNo active LLM API key or local servers are configured. I am running on my built-in state-aware reasoning engine.\n\nTo unlock deep reasoning, go to **Settings** and configure a Gemini API key or start a local LM Studio / Ollama server.`;
+        return `### ⚙ AI System Diagnostics: Heuristic Mode\n\nNo active LLM API key or local servers are configured. I am running on my built-in state-aware reasoning engine.\n\nTo unlock deep reasoning, go to **Settings** and configure a Gemini/OpenAI API key or start a local LM Studio / Ollama server.`;
       }
     }
 
