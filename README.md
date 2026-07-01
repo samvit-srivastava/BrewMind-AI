@@ -1,312 +1,436 @@
+<div align="center">
+
 # ☕ BrewMind AI
 
-<p align="center">
-  <img src="screenshots/dashboard.png" alt="BrewMind Dashboard" width="100%">
-</p>
+### 🧠 Real-Time Intelligence for Coffee Shop Operations
+
+Transform coffee shop operations into intelligent, data-driven decisions using **Artificial Intelligence, Digital Twins, Predictive Analytics, and Real-Time Simulation.**
 
 <p align="center">
 
-### 🧠 AI Operations Copilot & Digital Twin for Campus Coffee Shops
-
-Turn real-time café operations into intelligent decisions using simulation, predictive analytics, and AI-powered recommendations.
-
-</p>
-
-<p align="center">
-
-🌐 **Live Demo**
-
-https://6a456b2e864c41b04a03af05--astounding-jalebi-a9cf7e.netlify.app/
-
-📂 **GitHub Repository**
-
-(Your GitHub link)
-
-🎥 **Demo Video**
-
-(Add video link)
+[![Live Demo](https://img.shields.io/badge/🚀-Live%20Demo-success?style=for-the-badge)](https://6a45716447b4450008620265--astounding-jalebi-a9cf7e.netlify.app/)
+[![BeanHacks](https://img.shields.io/badge/BeanHacks-2026-orange?style=for-the-badge)]()
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)]
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)]
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)]
+[![Netlify](https://img.shields.io/badge/Hosted%20on-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)]
+[![AI Powered](https://img.shields.io/badge/AI-Powered-purple?style=for-the-badge)]
 
 </p>
 
----
+### 🌐 Live Demo
 
-## 🏆 BeanHacks 2026
+## **https://6a45716447b4450008620265--astounding-jalebi-a9cf7e.netlify.app/**
 
-BrewMind AI was built for **BeanHacks**, transforming coffee shop management from reactive decision-making into predictive operations through an interactive digital twin.
-
----
-
-# 🚀 Why BrewMind AI?
-
-Coffee shops constantly juggle:
-
-- Long queues
-- Inventory shortages
-- Staff overload
-- Equipment failures
-- Customer satisfaction
-- Weather-driven demand
-
-Managers often make these decisions using instinct.
-
-**BrewMind AI replaces guesswork with live operational intelligence.**
+</div>
 
 ---
 
-# ✨ Features
+# ☕ Overview
 
-## 🖥️ Live Operations Dashboard
+Every day, coffee shop managers make dozens of operational decisions.
 
-- Revenue tracking
-- Queue monitoring
-- Wait-time prediction
-- Customer satisfaction
-- Reputation score
-- AI confidence
-- Machine health
-- Staff efficiency
+- Should inventory be restocked now?
+- Why is the queue suddenly increasing?
+- Which employee is overloaded?
+- Will today's ingredients last through the evening rush?
+- How will weather affect customer traffic?
+- What happens if one coffee machine breaks?
+
+Most cafés rely on experience and intuition.
+
+**BrewMind AI** transforms those decisions into **real-time, AI-assisted intelligence.**
+
+It combines an interactive **Digital Twin**, a **live simulation engine**, **predictive analytics**, and an **AI Operations Copilot** to help managers monitor, predict, and optimize every aspect of café operations before problems impact customers.
 
 ---
 
-## ☕ Interactive Digital Twin
+# 🚀 Live Features
 
-- Animated café floor
-- Moving customers
-- Queue simulation
-- Active baristas
-- Seating visualization
-- Live weather
+## 📊 Operations Dashboard
+
+Monitor every important business metric in real time.
+
+- 💰 Revenue
+- 👥 Active Customers
+- ⏳ Queue Length
+- ⌛ Average Wait Time
+- 📦 Inventory Health
+- ⚙ Machine Health
+- 😊 Customer Satisfaction
+- ⭐ Café Reputation
+- 👨‍🍳 Staff Efficiency
+- 🤖 AI Confidence
+
+---
+
+## 🏪 Interactive Digital Twin
+
+Watch the café operate live.
+
+Features include:
+
+- Animated customers
+- Dynamic queue movement
+- Barista workflows
 - Machine activity
+- Seating utilization
+- Weather effects
+- Live operational status
+- Real-time updates
 
 ---
 
-## 🤖 AI Operations Brain
+## 🤖 AI Operations Copilot
 
-Analyzes dozens of operational signals every simulation cycle.
+Ask BrewMind AI questions like
 
-Provides:
+- What should I restock?
+- Why is revenue dropping?
+- Which employee needs help?
+- What should I prepare before lunch rush?
+- How can I reduce wait time?
+- What happens if demand suddenly spikes?
 
-- Recommendations
-- Business impact
-- Confidence score
-- Root-cause reasoning
-- Priority actions
+Supported AI Providers
 
----
-
-## 💬 AI Copilot
-
-Ask questions like:
-
-> Why is customer satisfaction dropping?
-
-> Which ingredient should I restock?
-
-> Will today's milk inventory survive lunch rush?
-
-Supports:
-
-- Gemini
-- LM Studio
+- Gemini API
+- OpenAI Compatible APIs
 - Ollama
-- OpenAI-compatible APIs
-- Local fallback reasoning
+- LM Studio
+- Built-in Offline AI Reasoning
 
 ---
 
-## 📦 Smart Inventory
+## 📦 Smart Inventory System
 
-Tracks
+Monitor
 
-- Ingredients
-- Freshness
-- Suppliers
-- Purchase Orders
-- Waste
-- Stock Runway
-- Automatic Restocking
+- Ingredient availability
+- Supplier quality
+- Purchase orders
+- Restocking suggestions
+- Freshness tracking
+- Waste prediction
+- Consumption forecasting
 
 ---
 
-## 📈 Analytics
+## 📈 Analytics Dashboard
 
-Interactive charts for
+Interactive charts powered by Chart.js
 
-- Revenue
-- Queue Growth
+- Revenue Trends
+- Queue Analytics
 - Customer Satisfaction
 - Machine Health
-- Inventory
+- Inventory Usage
 - Weather Impact
-- Best Selling Drinks
-
-Powered by Chart.js.
+- Product Performance
+- Forecasting
 
 ---
 
 ## 🎮 Scenario Sandbox
 
-Instantly simulate
+Simulate operational events before they happen.
 
-- 🌧 Rain
-- 📚 Exam Week
+Examples
+
+- 🌧 Rainy Day
+- 🎓 Exam Week
 - 🎉 Festival Rush
-- ☕ Machine Failure
-- 👨‍🍳 Missing Barista
-- 📦 Inventory Crisis
+- ⚠ Machine Failure
+- 👨‍🍳 Staff Shortage
+- 🚚 Inventory Crisis
 
-before applying them.
+See how every KPI changes instantly.
 
 ---
 
-## 🧠 Persistent Memory
+## 🧠 Intelligent Simulation Engine
 
-Remembers
+The application continuously simulates
 
-- Manager profile
-- AI conversations
-- Layout
-- Dashboard
-- Preferences
-- Simulation state
+- Customer arrivals
+- Queue growth
+- Order generation
+- Recipe preparation
+- Ingredient consumption
+- Employee workload
+- Inventory depletion
+- Machine wear
+- Customer satisfaction
+- Revenue generation
+- AI recommendations
 
-using browser localStorage.
+Everything updates in real time.
+
+---
+
+# ⚙ System Workflow
+
+```text
+Campus Schedule
+        │
+        ▼
+Customer Simulation
+        │
+        ▼
+Order Processing
+        │
+        ▼
+Inventory Engine
+        │
+        ▼
+Digital Twin
+        │
+        ▼
+AI Operations Brain
+        │
+        ▼
+Dashboard
+Analytics
+Recommendations
+Copilot
+```
 
 ---
 
 # 🏗 Architecture
 
+```mermaid
+flowchart LR
+
+A[Campus Events & Weather]
+B[Simulation Engine]
+C[Digital Twin]
+D[Inventory Engine]
+E[AI Brain]
+F[Analytics]
+G[Dashboard]
+H[AI Copilot]
+
+A --> B
+B --> C
+B --> D
+D --> E
+B --> E
+E --> G
+E --> H
+B --> F
+F --> G
 ```
-                    Customers
-                        │
-                        ▼
-              Simulation Engine
-                        │
-      ┌─────────────────┼──────────────────┐
-      ▼                 ▼                  ▼
- Inventory         Staff Logic        Weather
-      │                 │                  │
-      └──────────────┬─────────────────────┘
-                     ▼
-              AI Operations Brain
-                     │
-      ┌──────────────┼───────────────┐
-      ▼              ▼               ▼
- Dashboard      Analytics      AI Copilot
+
+---
+
+# ✨ Highlights
+
+✅ AI Operations Copilot
+
+✅ Live Digital Twin
+
+✅ Smart Inventory
+
+✅ Predictive Analytics
+
+✅ Interactive Scenario Simulator
+
+✅ Weather-Aware Demand Prediction
+
+✅ Real-Time KPI Dashboard
+
+✅ Customer Simulation Engine
+
+✅ Persistent Local Memory
+
+✅ Interactive Charts
+
+✅ Fully Browser-Based
+
+✅ No Backend Required
+
+---
+
+# 🛠 Technology Stack
+
+| Category | Technologies |
+|------------|-------------|
+| Frontend | HTML5, CSS3 |
+| Language | Vanilla JavaScript (ES Modules) |
+| Animation | GSAP |
+| Charts | Chart.js |
+| Icons | Lucide Icons |
+| Weather | Open-Meteo API |
+| AI | Gemini API |
+| AI Compatible | OpenAI Compatible APIs |
+| Local AI | Ollama, LM Studio |
+| Storage | Browser localStorage |
+| Voice | Web Speech API |
+| Audio | Web Audio API |
+| Graphics | SVG, Canvas |
+| Deployment | Netlify |
+
+---
+
+# 📂 Project Structure
+
 ```
-
----
-
-# ⚙️ Tech Stack
-
-| Technology | Purpose |
-|------------|---------|
-| HTML5 | UI |
-| CSS3 | Styling |
-| JavaScript ES Modules | Application |
-| GSAP | Animations |
-| Chart.js | Analytics |
-| Lucide | Icons |
-| Open-Meteo API | Weather |
-| localStorage | Persistence |
-| Gemini / Ollama / LM Studio | AI Providers |
-
----
-
-# 🎬 Demo
-
-Suggested walkthrough
-
-1. Dashboard
-2. Digital Twin
-3. Morning Rush
-4. Machine Failure
-5. Inventory
-6. Analytics
-7. AI Copilot
-8. Scenario Sandbox
-
-Approx.
-
-**2–3 minutes**
-
----
-
-# 📁 Project Structure
-
-```text
 .
+│
 ├── index.html
 ├── style.css
 ├── isometric_cafe_bg.png
+│
 └── js
-    ├── app.js
-    ├── simulation.js
-    ├── brain.js
-    ├── twin.js
-    ├── inventory.js
     ├── analytics.js
-    ├── scenarios.js
+    ├── app.js
+    ├── brain.js
     ├── copilot.js
     ├── demo.js
+    ├── inventory.js
     ├── memory.js
+    ├── scenarios.js
+    ├── simulation.js
+    ├── twin.js
     └── utils.js
 ```
 
 ---
 
-# 🚀 Running Locally
+# 🚀 Getting Started
 
+## Clone Repository
+
+```bash
+git clone https://github.com/samvit-srivastava/BrewMind-AI.git
 ```
-git clone <repo>
 
+Move into the project
+
+```bash
 cd BrewMind-AI
 ```
 
-Using Python
+---
+
+## Run with VS Code Live Server
+
+Right click
 
 ```
-python -m http.server 5500
+index.html
 ```
 
-or VS Code Live Server.
+Choose
+
+```
+Open with Live Server
+```
 
 ---
 
-# 🌍 Live Demo
+## Or Using Python
 
-**https://6a456b2e864c41b04a03af05--astounding-jalebi-a9cf7e.netlify.app/**
+```bash
+python -m http.server
+```
 
----
+Visit
 
-# 📊 Expected Impact
-
-✅ Reduce queue times
-
-✅ Reduce ingredient waste
-
-✅ Improve staff utilization
-
-✅ Improve customer satisfaction
-
-✅ Better demand forecasting
-
-✅ Smarter operational decisions
+```
+http://localhost:8000
+```
 
 ---
 
-# 🔮 Future Scope
+# 🎯 Demo Flow
 
-- POS Integration
-- IoT Coffee Machines
-- Multi-store Support
-- AI Workforce Scheduling
-- Mobile Manager App
-- Predictive Maintenance
-- Sales Forecasting
+Recommended 2–3 minute demonstration
+
+1. Splash Animation
+2. Dashboard Overview
+3. Digital Twin
+4. Trigger Morning Rush
+5. Machine Failure Scenario
+6. Inventory Dashboard
+7. Analytics Dashboard
+8. AI Copilot
+9. Scenario Sandbox
+10. Final Business Insights
 
 ---
 
-# ❤️ Built For BeanHacks
+# 💡 Why BrewMind AI?
 
-BrewMind AI demonstrates how Digital Twins and Explainable AI can modernize campus coffee shops by transforming operational data into intelligent decisions.
+Traditional dashboards only display information.
+
+**BrewMind AI understands it.**
+
+Instead of showing numbers, it answers questions like
+
+- What should I do next?
+- Why is this happening?
+- What will happen in the next hour?
+- Which action improves operations the most?
+
+It transforms reactive management into predictive decision-making.
+
+---
+
+# 🏆 BeanHacks 2026
+
+BrewMind AI was built for **BeanHacks 2026**.
+
+It addresses multiple challenge areas including
+
+- ☕ Coffee Shop Operations
+- 📦 Inventory Optimization
+- 👨‍🍳 Staff Management
+- 📊 Sales Analytics
+- 😊 Customer Experience
+- 🤖 Artificial Intelligence
+- 📈 Business Intelligence
+- 🔮 Predictive Operations
+
+---
+
+# 🛣 Future Roadmap
+
+- 📱 Mobile Application
+- ☁ Cloud Synchronization
+- 🏪 Multi-Store Management
+- 📷 Computer Vision Queue Detection
+- 🤖 Autonomous AI Manager
+- 📊 POS Integration
+- ☕ IoT Coffee Machine Integration
+- 📈 Advanced Demand Forecasting
+- 🌍 Multi-Language Support
+
+---
+
+# 👨‍💻 Developer
+
+**Samvit Srivastava**
+
+GitHub
+
+https://github.com/samvit-srivastava/BrewMind-AI
+
+---
+
+# 📄 License
+
+This project was developed as a **Hackathon Prototype** for **BeanHacks 2026**.
+
+---
+
+<div align="center">
+
+## ☕ Brew Smarter. Predict Better. Serve Faster.
+
+### Built with ❤️ using HTML, CSS, JavaScript, AI, and a passion for building intelligent systems.
+
+⭐ If you enjoyed this project, consider giving it a star!
+
+</div>
