@@ -192,9 +192,10 @@ class AppController {
 
     if (!splash) return;
 
-    // Check if user has already run the app and skip is cached in LocalStorage
-    const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    const isFirstRun = isDev || localStorage.getItem('brewmind_launched') === null;
+    // Always run the same splash lifecycle on page load. Live Server used to
+    // force this path while hosted refreshes skipped it via localStorage,
+    // leaving the app with a different animation initialization sequence.
+    const shouldRunSplashIntro = true;
 
     const completeSplash = () => {
       localStorage.setItem('brewmind_launched', 'true');
@@ -229,7 +230,7 @@ class AppController {
       });
     }
 
-    if (!isFirstRun) {
+    if (!shouldRunSplashIntro) {
       completeSplash();
       return;
     }
