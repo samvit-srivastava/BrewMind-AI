@@ -36,8 +36,8 @@ class AICopilot {
     this.setupCardDelegation();
     this.checkLocalAIStatus();
     
-    // Check local AI status periodically
-    setInterval(() => this.checkLocalAIStatus(), 10000);
+    // Check local AI status periodically (every 30s to reduce console noise)
+    setInterval(() => this.checkLocalAIStatus(), 30000);
 
     // Global Cmd+K / Ctrl+K listener to toggle command center drawer
     window.addEventListener('keydown', (e) => {
@@ -159,56 +159,34 @@ class AICopilot {
    * @param {string} sender 'user' | 'assistant'
    * @param {string} text 
    */
-  addChatBubble(sender, text) {
+  addChatBubble(sender, text, source = null) {
     if (!this.chatHistoryContainer) return;
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${sender}`;
     
     if (sender === 'assistant') {
-      bubble.innerHTML = this.renderMarkdown(text);
+      // Add AI source badge
+      if (source) {
+        const badge = document.createElement('div');
+        badge.style.cssText = 'display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.6rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.04);';
+        const dot = source === 'local' ? '🟡' : '🟢';
+        const label = source === 'local' ? 'Local Reasoning' : 
+          source === 'lm-studio' ? 'LM Studio AI' :
+          source === 'ollama' ? 'Ollama AI' :
+          source === 'gemini' ? 'Gemini AI' : 'AI Response';
+        badge.innerHTML = `<span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">${dot} ${label}</span>`;
+        bubble.appendChild(badge);
+      }
+
+      const content = document.createElement('div');
+      content.innerHTML = this.renderMarkdown(text);
+      bubble.appendChild(content);
       
-      // Inject interactive recommendation card if keywords match
-      const lower = text.toLowerCase();
-      if (lower.includes('barista') || lower.includes('staff') || lower.includes('hire')) {
-        bubble.appendChild(this.createRecommendationDOM({
-          action: 'hire_barista',
-          title: 'Hired Temporary Barista Support',
-          observation: 'Queue length exceeded critical thresholds during class break periods.',
-          reasoning: 'Spawning intermediate staff helper partitions the register queuing load and speeds up drink preparation lines.',
-          assumptions: 'Arrival rates remain stable; Equipment operations are uninterrupted; Inventory capacity is sufficient.',
-          confidencePct: 94,
-          cost: '₹850',
-          benefit: 'Average queue wait time decreases by 31%',
-          roi: '147%',
-          timeToImpact: 'Immediate'
-        }));
-      } else if (lower.includes('calibrate') || lower.includes('machine') || lower.includes('maintenance')) {
-        bubble.appendChild(this.createRecommendationDOM({
-          action: 'calibrate_machines',
-          title: 'Calibrate Espresso Systems',
-          observation: 'Espresso boiler heat pressure variance exceeds 15% tolerance limits.',
-          reasoning: 'Calibrating thermal regulators calibrates extraction pressures, completely preventing thermal outages.',
-          assumptions: 'No electrical grid outages occur; calibration spare parts are available.',
-          confidencePct: 88,
-          cost: '₹350',
-          benefit: 'Espresso machine health restored to 100%',
-          roi: '210%',
-          timeToImpact: '15 simulated minutes'
-        }));
-      } else if (lower.includes('restock') || lower.includes('beans') || lower.includes('milk')) {
-        bubble.appendChild(this.createRecommendationDOM({
-          action: 'restock_inventory',
-          title: 'Emergency Ingredients Replenishment',
-          observation: 'Active inventory stocks for dairy or espresso beans dropped below 30%.',
-          reasoning: 'Replenishing beans and milk reserves immediately prevents stockout cancels during campus hours.',
-          assumptions: 'Local campus supply courier schedules remain normal.',
-          confidencePct: 96,
-          cost: '₹500',
-          benefit: 'Ingredients stock levels restored to 100% capacity',
-          roi: '320%',
-          timeToImpact: 'Immediate'
-        }));
+      // Attach any queued recommendation cards (set by generateLocalRuleResponse)
+      if (this._pendingRecommendation) {
+        bubble.appendChild(this.createRecommendationDOM(this._pendingRecommendation));
+        this._pendingRecommendation = null;
       }
 
       // Voice synthesises
@@ -418,10 +396,16 @@ class AICopilot {
     if (!badgeEl) return;
 
     if (aiProvider !== 'lm-studio' && aiProvider !== 'ollama') {
-      badgeEl.innerHTML = `🟢 Provider Connected<br/>Endpoint: Cloud API`;
+      const hasKey = !!memory.profile.geminiKey;
+      if (hasKey) {
+        badgeEl.innerHTML = `<strong style="color:var(--color-success);">🟢 Cloud API Ready</strong><br/>Provider: ${aiProvider === 'openai' ? 'OpenAI' : 'Gemini'}<br/>Status: API Key Configured`;
+      } else {
+        badgeEl.innerHTML = `<strong style="color:var(--color-warning);">🟡 Local Heuristic Mode</strong><br/>No API key configured.<br/>Smart fallback reasoning active.`;
+      }
       return;
     }
 
+    const providerLabel = aiProvider === 'lm-studio' ? 'LM Studio' : 'Ollama';
     let testUrl = aiProvider === 'lm-studio' 
       ? `${aiEndpoint || 'http://127.0.0.1:1234'}/v1/models`
       : `${aiEndpoint || 'http://127.0.0.1:11434'}/api/tags`;
@@ -429,9 +413,11 @@ class AICopilot {
     const start = performance.now();
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-      const response = await fetch(testUrl, { signal: controller.signal });
+      const response = await fetch(testUrl, {
+        signal: controller.signal
+      });
       clearTimeout(timeoutId);
 
       const latency = Math.round(performance.now() - start);
@@ -443,19 +429,35 @@ class AICopilot {
         } else {
           model = data.models?.[0]?.name || 'Ollama Default';
         }
+        this.detectedLocalModel = model;
+        this._corsBlocked = false;
         
         badgeEl.innerHTML = `
-          <strong style="color:var(--color-success);">🟢 Local AI Connected</strong><br/>
-          Provider: ${aiProvider === 'lm-studio' ? 'LM Studio' : 'Ollama'}<br/>
+          <strong style="color:var(--color-success);">🟢 ${providerLabel} Connected</strong><br/>
           Model: ${model}<br/>
           Latency: ${latency}ms<br/>
-          Status: Ready for Demo
+          Status: Ready
         `;
       } else {
-        badgeEl.innerText = `🔴 Local AI Offline (Local reasoning fallback active)`;
+        badgeEl.innerHTML = `<strong style="color:var(--color-warning);">🟡 ${providerLabel} Error</strong><br/>Server returned HTTP ${response.status}.<br/>Check server logs.`;
       }
     } catch(err) {
-      badgeEl.innerText = `🔴 Local AI Offline (Local reasoning fallback active)`;
+      this._corsBlocked = true;
+      // Detect if this is likely CORS vs server offline
+      const isCORS = err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError') || err.name === 'TypeError';
+      
+      if (isCORS) {
+        badgeEl.innerHTML = `
+          <strong style="color:var(--color-danger);">🔴 CORS Blocked</strong><br/>
+          ${providerLabel} is running but the browser blocked the request.<br/>
+          <strong style="color:var(--color-primary);">Fix:</strong> Open ${providerLabel} → <strong>Server Settings</strong> → Enable <strong>CORS</strong><br/>
+          Then refresh this page.
+        `;
+      } else if (err.name === 'AbortError') {
+        badgeEl.innerHTML = `<strong style="color:var(--color-warning);">🟡 ${providerLabel} Timeout</strong><br/>Server is too slow to respond.<br/>Try restarting ${providerLabel}.`;
+      } else {
+        badgeEl.innerHTML = `<strong style="color:var(--color-warning);">🟡 ${providerLabel} Offline</strong><br/>Cannot connect to ${testUrl}<br/>Start ${providerLabel} and load a model.`;
+      }
     }
   }
 
@@ -481,49 +483,57 @@ class AICopilot {
       return;
     }
 
+    const { aiProvider } = memory.profile;
+    const isLocalAI = (aiProvider === 'lm-studio' || aiProvider === 'ollama');
+    const aiLabel = aiProvider === 'lm-studio' ? 'LM Studio' : aiProvider === 'ollama' ? 'Ollama' : aiProvider === 'gemini' ? 'Gemini' : 'AI';
+
     const typingBubble = document.createElement('div');
     typingBubble.className = 'chat-bubble assistant typing-dots';
-    typingBubble.innerHTML = `<span style="opacity: 0.6;" id="thinking-stage-display">Observing Current Operations...</span>`;
+    typingBubble.innerHTML = `<span style="opacity: 0.6;" id="thinking-stage-display">✨ Connecting to ${aiLabel}...</span>`;
     this.chatHistoryContainer.appendChild(typingBubble);
     this.chatHistoryContainer.scrollTop = this.chatHistoryContainer.scrollHeight;
 
-    const stages = [
-      { text: 'Reviewing Historical Trends...', delay: 350 },
-      { text: 'Running Predictive Simulation...', delay: 700 },
-      { text: 'Comparing Business Outcomes...', delay: 1050 },
-      { text: 'Preparing Recommendation...', delay: 1400 }
-    ];
+    // Start the AI fetch immediately (no fake delay)
+    try {
+      // Show thinking stages while waiting
+      const stageTimers = [
+        setTimeout(() => { const el = document.getElementById('thinking-stage-display'); if (el) el.innerText = `🧠 ${aiLabel} is thinking...`; }, 800),
+        setTimeout(() => { const el = document.getElementById('thinking-stage-display'); if (el) el.innerText = `📝 Composing response...`; }, 3000),
+        setTimeout(() => { const el = document.getElementById('thinking-stage-display'); if (el) el.innerText = `⏳ Still working... (large model may take a moment)`; }, 8000)
+      ];
 
-    stages.forEach(st => {
-      setTimeout(() => {
-        const el = document.getElementById('thinking-stage-display');
-        if (el) el.innerText = st.text;
-      }, st.delay);
-    });
+      const reply = await this.fetchAIResponse(userPrompt);
+      stageTimers.forEach(t => clearTimeout(t));
+      typingBubble.remove();
+      this.addChatBubble('assistant', reply, aiProvider || 'lm-studio');
+      memory.saveChatMessage('assistant', reply);
+    } catch (e) {
+      console.warn("AI fetch failed:", e.message);
+      typingBubble.remove();
 
-    setTimeout(async () => {
-      try {
-        const reply = await this.fetchAIResponse(userPrompt);
-        typingBubble.remove();
-        this.addChatBubble('assistant', reply);
-        memory.saveChatMessage('assistant', reply);
-      } catch (e) {
-        console.warn("AI fetch failed, falling back to local reasoning engine:", e);
-        typingBubble.remove();
-
-        const errMsg = e.message || 'Connection failed';
-        const errorNote = document.createElement('div');
-        errorNote.style.cssText = 'font-size: 0.65rem; color: var(--text-muted); text-align: center; padding: 0.25rem; opacity: 0.7;';
-        errorNote.textContent = `⚠ ${errMsg} — Local analysis fallback`;
-        this.chatHistoryContainer.appendChild(errorNote);
-
-        await new Promise(r => setTimeout(r, 300));
-
-        const reply = this.generateLocalRuleResponse(userPrompt);
-        this.addChatBubble('assistant', reply);
-        memory.saveChatMessage('assistant', reply);
+      // If it's a timeout error
+      if (e.message?.includes('timeout') || e.message?.includes('timed out')) {
+        const timeoutMsg = `**⏰ Local AI Response Timeout**\n\nThe local AI server at **${aiLabel}** took too long to generate a response (over 45 seconds).\n\n**Suggestions to speed it up:**\n- **Reduce Model Size:** Try a smaller model like \`Qwen 2.5 1.5B\` or \`Llama 3.2 1B / 3B\` (LM Studio -> Search icon -> filter by 1B-3B sizes).\n- **Enable GPU:** Check **"Hardware Settings"** in LM Studio to offload layers to your GPU.\n\n*Using built-in local fallback reasoning for this answer:*`;
+        this.addChatBubble('assistant', timeoutMsg, 'local');
+        
+        const fallbackReply = this.generateLocalRuleResponse(userPrompt);
+        this.addChatBubble('assistant', fallbackReply, 'local');
+        memory.saveChatMessage('assistant', fallbackReply);
+      } else {
+        // If CORS/Connection is the issue, show specific instructions
+        const isCORS = e.message?.includes('Cannot reach') || e.message?.includes('CORS') || this._corsBlocked;
+        if (isCORS && (aiProvider === 'lm-studio' || aiProvider === 'ollama')) {
+          const corsMsg = `**⚠ ${aiLabel} Connection Blocked (CORS)**\n\nYour ${aiLabel} server is running but the browser is blocking the connection.\n\n**To fix this (takes 10 seconds):**\n1. Open **${aiLabel}**\n2. Click **"Server Settings"** (top bar)\n3. Enable **"Enable CORS"** toggle\n4. **Refresh this page**\n\nOnce CORS is enabled, I'll use ${aiLabel}'s **${this.detectedLocalModel || 'loaded model'}** for all responses!`;
+          this.addChatBubble('assistant', corsMsg, 'local');
+          memory.saveChatMessage('assistant', corsMsg);
+        } else {
+          // Seamless local fallback
+          const reply = this.generateLocalRuleResponse(userPrompt);
+          this.addChatBubble('assistant', reply, 'local');
+          memory.saveChatMessage('assistant', reply);
+        }
       }
-    }, 1650);
+    }
   }
 
   /**
@@ -566,154 +576,191 @@ class AICopilot {
    */
   async fetchAIResponse(userPrompt) {
     const { aiProvider, aiEndpoint, geminiKey } = memory.profile;
-    const provider = aiProvider || 'gemini';
+    const provider = aiProvider || 'lm-studio';
     
-    // Build a live state snapshot so the AI has context
+    // Build a rich, live state snapshot for AI context
     const state = window.BrewMind.getState();
+    const staffDetails = state.staff.list.map(b => 
+      `${b.name}: speed=${b.efficiency}x, stress=${b.stress}%, busy=${b.busy}, ordersServed=${b.ordersServed}, skill=${b.skill || 'Standard'}`
+    ).join('\n  ');
+
     const stateContext = `
-Current Café State:
-- Time: ${state.clock.hours.toString().padStart(2,'0')}:${state.clock.minutes.toString().padStart(2,'0')}
+LIVE CAFÉ DASHBOARD DATA:
+- Simulation Time: ${state.clock.hours.toString().padStart(2,'0')}:${state.clock.minutes.toString().padStart(2,'0')}
 - Revenue Today: $${state.revenue.toFixed(2)}
-- Orders Completed: ${state.orders.completed}
-- Queue Length: ${state.customers.queueLength} students
+- Orders: ${state.orders.completed} completed, ${state.orders.cancelled} cancelled
+- Queue: ${state.customers.queueLength} students waiting
 - Average Wait Time: ${state.customers.avgWaitTime.toFixed(1)} minutes
 - Customer Satisfaction: ${state.customerSatisfaction}%
-- Café Reputation: ${state.cafeReputation}/100
-- Machine Health: ${state.machineHealth}%
-- Campus Activity: ${state.campusActivity}
+- Café Reputation Score: ${state.cafeReputation}/100
+- Espresso Machine Health: ${state.machineHealth}%
+- Campus Activity Level: ${state.campusActivity}
 - Weather: ${state.weather.condition}, ${state.weather.temp}°C
-- Staff: ${state.staff.list.map(b => `${b.name} (stress: ${b.stress}%, busy: ${b.busy})`).join(', ')}
-- Inventory: Coffee Beans ${state.inventory.coffeeBeans.current.toFixed(1)}kg/${state.inventory.coffeeBeans.max}kg, Milk ${state.inventory.milk.current.toFixed(1)}L/${state.inventory.milk.max}L, Cups ${state.inventory.cups.current}/${state.inventory.cups.max}
+- Staff:\n  ${staffDetails}
+- Inventory:
+  Coffee Beans: ${state.inventory.coffeeBeans.current.toFixed(1)}kg / ${state.inventory.coffeeBeans.max}kg (${(state.inventory.coffeeBeans.current/state.inventory.coffeeBeans.max*100).toFixed(0)}%)
+  Milk: ${state.inventory.milk.current.toFixed(1)}L / ${state.inventory.milk.max}L (${(state.inventory.milk.current/state.inventory.milk.max*100).toFixed(0)}%)
+  Cups: ${state.inventory.cups.current} / ${state.inventory.cups.max} (${(state.inventory.cups.current/state.inventory.cups.max*100).toFixed(0)}%)
 `;
     
-    const systemPrompt = `You are BrewMind AI, the intelligent Campus Café Operations Copilot. You assist the café manager by analyzing the live café state below and recommending adjustments. Keep responses concise (2-4 sentences), action-oriented, and friendly. Reference staff by name: Emma (fast, lower quality), Sophia (balanced), Liam (slow, excellent quality). Use campus terminology: Class Break Rush, Faculty Guest, Students.\n\n${stateContext}`;
+    const systemPrompt = `You are BrewMind AI — a highly intelligent Campus Café Business Copilot.
+
+Your role is to help the café manager run a successful campus coffee shop. You have access to LIVE operational data below.
+
+You can answer ANY question about:
+- Business strategy (pricing, marketing, growth, profitability)
+- Operations (staffing, scheduling, inventory management, equipment maintenance)
+- Customer experience (wait times, satisfaction, menu optimization)
+- Financial analysis (revenue forecasting, cost control, ROI)
+- Staff management (performance, stress levels, shift rotation)
+- Competitive analysis and market positioning
+- Risk assessment and contingency planning
+
+STAFF PROFILES:
+- Emma: Fast (1.25x speed) but lower quality. Best for high-volume rush periods.
+- Sophia: Balanced (1.0x speed, 1.0x quality). Reliable all-rounder.
+- Liam: Slow (0.75x speed) but excellent quality (1.3x). Best for premium drinks and Faculty Guests.
+
+GUIDELINES:
+- Use the live data below to give specific, data-driven answers
+- Reference actual numbers from the dashboard
+- Be actionable — tell the manager exactly what to do
+- Use markdown formatting: **bold** for key metrics, bullet points for lists
+- Keep responses concise and fast (3-5 sentences maximum)
+- If you spot problems in the data, proactively flag them
+- Use emojis sparingly for visual clarity (✅, ⚠, 🔴, 📊, 💡)
+
+${stateContext}`;
 
     if (provider === 'gemini') {
       const key = geminiKey || '';
       if (!key) {
-        throw new Error("Missing Gemini API Key. Please configure it in Settings.");
+        throw new Error("No Gemini API key configured.");
       }
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `${systemPrompt}\n\nManager Request: ${userPrompt}\n\nProvide a short, direct response.`
-            }]
-          }]
-        })
-      });
-      const data = await response.json();
-      if (data.candidates && data.candidates[0].content.parts[0].text) {
-        return data.candidates[0].content.parts[0].text.trim();
-      }
-      throw new Error(data.error?.message || "Invalid response from Gemini API.");
-    } else {
-      // OpenAI Compatible (LM Studio, Ollama, OpenAI)
-      let baseUrl = (aiEndpoint || 'http://127.0.0.1:1234').replace(/\/+$/, '');
-      
-      // Normalize: strip trailing /v1, /chat/completions, etc. to get the raw base
-      baseUrl = baseUrl.replace(/\/v1\/chat\/completions\/?$/, '')
-                       .replace(/\/chat\/completions\/?$/, '')
-                       .replace(/\/v1\/?$/, '');
-      
-      // Reconstruct the correct Chat Completions endpoint
-      const url = `${baseUrl}/v1/chat/completions`;
-
-      // Ollama uses port 11434 by default
-      const finalUrl = (provider === 'ollama' && !baseUrl.includes('11434')) 
-        ? 'http://127.0.0.1:11434/v1/chat/completions' 
-        : url;
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (geminiKey && provider === 'openai') {
-        headers['Authorization'] = `Bearer ${geminiKey}`;
-      }
-
-      // Determine model name: check if we previously detected a local model id on startup
-      let modelName = 'gpt-3.5-turbo';
-      if (provider === 'lm-studio') {
-        modelName = this.detectedLocalModel || 'meta-llama-3-8b-instruct';
-      } else if (provider === 'ollama') {
-        modelName = this.detectedLocalModel || 'llama3';
-      }
-
-      const payload = {
-        model: modelName,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 300,
-        stream: false
-      };
-
-      console.log(`[BrewMind AI Outgoing Payload - ${provider.toUpperCase()}]:`, JSON.stringify(payload, null, 2));
-
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
       let response;
       try {
-        response = await fetch(finalUrl, {
+        response = await fetch(url, {
           method: 'POST',
-          headers: headers,
+          headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `${systemPrompt}\n\nManager's Question: ${userPrompt}`
+              }]
+            }]
+          })
         });
       } catch (fetchErr) {
         clearTimeout(timeoutId);
-        // Distinguish connection / CORS / Timeout errors
-        if (fetchErr.name === 'AbortError') {
-          throw new Error(`AI request timed out after 15 seconds. Verify your ${provider === 'lm-studio' ? 'LM Studio' : 'Ollama'} server is running.`);
-        }
-        if (fetchErr.message && fetchErr.message.includes('Failed to fetch')) {
-          throw new Error(`Connection failed. This could be a CORS issue or your local AI server at ${finalUrl} is offline.`);
-        }
-        throw new Error(`Connection failed: ${fetchErr.message}`);
+        throw new Error('Gemini API unreachable.');
       }
-
       clearTimeout(timeoutId);
-      console.log(`[BrewMind AI Response Status]: ${response.status} ${response.statusText}`);
-
-      let responseText = '';
-      try {
-        responseText = await response.text();
-      } catch (readErr) {
-        throw new Error("Unable to read response payload from server.");
+      const data = await response.json();
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        return data.candidates[0].content.parts[0].text.trim();
       }
-
-      console.log(`[BrewMind AI Incoming Response - ${provider.toUpperCase()}]:`, responseText);
-
-      if (!response.ok) {
-        // Detailed error reporting based on HTTP status codes
-        if (response.status === 400) {
-          throw new Error("Invalid request payload (400 Bad Request): Verify request parameters.");
-        }
-        if (response.status === 404) {
-          throw new Error("Model endpoint not found (404): Verify LM Studio is hosting the API.");
-        }
-        if (response.status === 500) {
-          throw new Error("Local AI server error (500): The server encountered an internal error.");
-        }
-        throw new Error(`HTTP Error ${response.status}: ${response.statusText}. Response: ${responseText.substring(0, 100)}`);
-      }
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (jsonErr) {
-        throw new Error("Invalid JSON returned from local AI provider.");
-      }
-
-      if (data.choices && data.choices[0].message?.content) {
-        return data.choices[0].message.content.trim();
-      }
-      throw new Error("Invalid OpenAI response format (missing choices content).");
+      throw new Error(data.error?.message || 'Invalid Gemini response.');
     }
+
+    // --- OpenAI-Compatible Providers: LM Studio, Ollama, OpenAI ---
+    let baseUrl = (aiEndpoint || (provider === 'ollama' ? 'http://127.0.0.1:11434' : 'http://127.0.0.1:1234')).replace(/\/+$/, '');
+    
+    baseUrl = baseUrl.replace(/\/v1\/chat\/completions\/?$/, '')
+                     .replace(/\/chat\/completions\/?$/, '')
+                     .replace(/\/v1\/?$/, '');
+    
+    const finalUrl = `${baseUrl}/v1/chat/completions`;
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (geminiKey && provider === 'openai') {
+      headers['Authorization'] = `Bearer ${geminiKey}`;
+    }
+
+    let modelName = 'gpt-3.5-turbo';
+    if (provider === 'lm-studio') {
+      modelName = this.detectedLocalModel || 'local-model';
+    } else if (provider === 'ollama') {
+      modelName = this.detectedLocalModel || 'llama3';
+    }
+
+    const payload = {
+      model: modelName,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 250,
+      stream: false
+    };
+
+    console.log(`[BrewMind AI] ${provider.toUpperCase()} → ${finalUrl} (model: ${modelName})`);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+    let response;
+    try {
+      response = await fetch(finalUrl, {
+        method: 'POST',
+        headers: headers,
+        signal: controller.signal,
+        mode: 'cors',
+        body: JSON.stringify(payload)
+      });
+    } catch (fetchErr) {
+      if (fetchErr.name === 'AbortError' || fetchErr.message?.includes('abort')) {
+        clearTimeout(timeoutId);
+        throw new Error("AI request timed out. Local model is too slow.");
+      }
+      
+      console.warn("Standard POST request failed. Retrying with simple Content-Type to bypass CORS preflight...", fetchErr);
+      try {
+        // Retry with Content-Type: text/plain to bypass OPTIONS preflight
+        response = await fetch(finalUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          signal: controller.signal,
+          body: JSON.stringify(payload)
+        });
+      } catch (retryErr) {
+        clearTimeout(timeoutId);
+        if (retryErr.name === 'AbortError' || retryErr.message?.includes('abort')) {
+          throw new Error("AI request timed out. Local model is too slow.");
+        }
+        throw new Error(`Cannot reach ${provider === 'lm-studio' ? 'LM Studio' : provider === 'ollama' ? 'Ollama' : 'API'} server.`);
+      }
+    }
+
+    clearTimeout(timeoutId);
+
+    let responseText = '';
+    try {
+      responseText = await response.text();
+    } catch (readErr) {
+      throw new Error('Unable to read AI response.');
+    }
+
+    if (!response.ok) {
+      console.error(`[BrewMind AI] Error ${response.status}:`, responseText.substring(0, 200));
+      throw new Error(`AI server returned ${response.status}.`);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (jsonErr) {
+      throw new Error('Invalid JSON from AI provider.');
+    }
+
+    if (data.choices && data.choices[0]?.message?.content) {
+      return data.choices[0].message.content.trim();
+    }
+    throw new Error('Unexpected AI response format.');
   }
 
   /**
@@ -722,104 +769,184 @@ Current Café State:
   generateLocalRuleResponse(prompt) {
     const state = window.BrewMind.getState();
     const p = prompt.toLowerCase().trim();
+    this._pendingRecommendation = null;
 
-    // 1. Basic greetings
-    if (p === 'hi' || p === 'hello' || p === 'hey' || p === 'yo' || p === 'hello copilot') {
-      return `Hello! I am BrewMind, your Campus Café Operations Copilot. 
-
-I'm currently running in **Local Heuristic Mode** (no API Key configured in Settings). 
-
-How can I help optimize your shop today? You can ask me about:
-- **Baristas & staff performance** (Emma, Liam, Sophia)
-- **Inventory & stock levels**
-- **Café reputation and wait times**`;
+    // --- System / AI status queries ---
+    if (p.includes('lm studio') || p.includes('lmstudio') || p.includes('ollama') || p.includes('api') || p.includes('ai status') || p.includes('connected') || p.includes('working')) {
+      const { aiProvider, aiEndpoint, geminiKey } = memory.profile;
+      const hasKey = !!geminiKey;
+      const isLocal = aiProvider === 'lm-studio' || aiProvider === 'ollama';
+      const providerLabel = aiProvider === 'lm-studio' ? 'LM Studio' : 'Ollama';
+      const modelDetected = this.detectedLocalModel;
+      
+      if (isLocal && modelDetected) {
+        return `**AI Status: ✅ Connected**\n- Provider: **${providerLabel}**\n- Model: **${modelDetected}**\n- Endpoint: ${aiEndpoint || 'Default'}\n\nYour local AI is running and ready!`;
+      } else if (isLocal && this._corsBlocked) {
+        return `**AI Status: 🔴 CORS Blocked**\n\n${providerLabel} is running but the browser is **blocking** the connection.\n\n**Fix this in 10 seconds:**\n1. Open **${providerLabel}**\n2. Click **"Server Settings"** at the top\n3. Turn ON **"Enable CORS"**\n4. **Refresh this page**\n\nThat's it! After enabling CORS, I'll connect to your local AI automatically.`;
+      } else if (isLocal) {
+        return `**AI Status: ⚠ Not Connected**\n- Provider: **${providerLabel}** (selected)\n- Endpoint: ${aiEndpoint || 'http://127.0.0.1:1234'}\n\n**Checklist:**\n1. ✅ Is ${providerLabel} running? (Check taskbar)\n2. ✅ Is a model loaded? (Open ${providerLabel} → Load a model)\n3. ✅ Is CORS enabled? (Server Settings → Enable CORS)\n4. ✅ Is the server started? (Local Server → Start)\n\nAfter fixing, **refresh this page**.`;
+      } else if (hasKey) {
+        return `**AI Status: ✅ Cloud API Ready**\n- Provider: **${aiProvider === 'openai' ? 'OpenAI' : 'Gemini'}**\n- API Key: Configured`;
+      } else {
+        return `**AI Status: No AI Configured**\n\n**Options to enable AI:**\n- **Local:** Start LM Studio or Ollama, load a model, enable CORS\n- **Cloud:** Go to Settings → enter a Gemini API Key`;
+      }
     }
 
-    // 2. Staff performance queries
-    if (p.includes('staff') || p.includes('emma') || p.includes('liam') || p.includes('sophia') || p.includes('barista')) {
+    // --- Greetings ---
+    if (/^(hi|hello|hey|yo|sup|good morning|good evening|good afternoon)\b/.test(p)) {
+      // Build a contextual greeting based on current state
+      const hour = state.clock.hours;
+      const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      const qLen = state.customers.queueLength;
+      const sat = state.customerSatisfaction;
+      
+      let statusNote = '';
+      if (qLen > 6) statusNote = `\n\n⚠ **Heads up:** Queue is at **${qLen} students** — consider hiring temp staff.`;
+      else if (sat < 70) statusNote = `\n\n⚠ **Attention:** Satisfaction dropped to **${sat}%** — let's investigate.`;
+      else if (state.machineHealth < 60) statusNote = `\n\n⚠ **Alert:** Machine health is at **${state.machineHealth}%** — maintenance needed.`;
+      else statusNote = `\n\n✅ Operations look healthy! Queue: ${qLen} students, Satisfaction: ${sat}%.`;
+      
+      return `${timeGreeting}! I'm **BrewMind**, your AI Operations Copilot.${statusNote}\n\nWhat would you like to know? Try asking me things like:\n- *"How are my baristas doing?"*\n- *"Should I restock?"*\n- *"What's our revenue today?"*\n- *"Optimize my operations"*`;
+    }
+
+    // --- Staff analysis ---
+    if (p.includes('staff') || p.includes('emma') || p.includes('liam') || p.includes('sophia') || p.includes('barista') || p.includes('hire') || p.includes('team')) {
       const emma = state.staff.list.find(b => b.name === 'Emma');
       const sophia = state.staff.list.find(b => b.name === 'Sophia');
       const liam = state.staff.list.find(b => b.name === 'Liam');
-      return `**Barista Performance Analysis (Local Mode):**
-- **Emma**: Processing speed is at 1.25x. Stress is currently **${emma ? emma.stress : 0}%**. (Emma is fast but high stress degrades quality).
-- **Sophia**: Balanced speed (1.0x) and quality (1.0x). Currently stable.
-- **Liam**: Excellent quality (1.3x) but slow speed (0.75x). Stress is **${liam ? liam.stress : 0}%**.
-
-*Operational recommendation:* Keep Emma active on registers during rush breaks, but assign Liam to the Espresso bars for high-value orders and Faculty Guests.`;
+      
+      // Analyze if hiring is actually needed
+      const qLen = state.customers.queueLength;
+      let actionAdvice = '';
+      if (qLen > 5) {
+        actionAdvice = `\n\n**⚡ Action Needed:** Queue is congested (${qLen} students). I recommend hiring temporary support.`;
+        this._pendingRecommendation = {
+          action: 'hire_barista', title: 'Hire Temporary Barista Support',
+          observation: `Queue length is ${qLen} students — exceeding comfortable thresholds.`,
+          reasoning: 'Adding a barista splits the register load and accelerates drink prep during rush.',
+          assumptions: 'Arrival rates remain stable; equipment is operational.',
+          confidencePct: 94, cost: '₹850', benefit: 'Wait time decreases ~31%', roi: '147%', timeToImpact: 'Immediate'
+        };
+      } else {
+        actionAdvice = `\n\nStaffing looks adequate for current demand (${qLen} in queue).`;
+      }
+      
+      return `**Barista Performance:**\n- **Emma** — Speed: 1.25x, Stress: **${emma?.stress || 0}%**, Orders: ${emma?.ordersServed || 0}. ${emma?.busy ? '🔴 Busy' : '🟢 Free'}\n- **Sophia** — Speed: 1.0x, Quality: 1.0x, Stress: **${sophia?.stress || 0}%**. ${sophia?.busy ? '🔴 Busy' : '🟢 Free'}\n- **Liam** — Speed: 0.75x, Quality: 1.3x, Stress: **${liam?.stress || 0}%**. ${liam?.busy ? '🔴 Busy' : '🟢 Free'}${actionAdvice}`;
     }
 
-    // 3. Inventory queries
-    if (p.includes('inventory') || p.includes('beans') || p.includes('milk') || p.includes('stock') || p.includes('exhaust') || p.includes('replenish')) {
-      const beans = state.inventory.coffeeBeans.current;
-      const milk = state.inventory.milk.current;
-      const cups = state.inventory.cups.current;
-      return `**Inventory Stock Status (Local Mode):**
-- Espresso Beans: **${beans.toFixed(1)} kg** remaining.
-- Dairy & Oat Milk: **${milk.toFixed(1)} L** remaining.
-- Paper Cups: **${cups} pcs** remaining.
-
-*Operational recommendation:* Replenish milk and coffee bean reserves via the **Inventory** panel before levels fall below 35% to avoid order fulfillment bottlenecks.`;
+    // --- Inventory ---
+    if (p.includes('inventory') || p.includes('beans') || p.includes('milk') || p.includes('stock') || p.includes('restock') || p.includes('replenish') || p.includes('supplies')) {
+      const beans = state.inventory.coffeeBeans;
+      const milk = state.inventory.milk;
+      const cups = state.inventory.cups;
+      const beansPct = (beans.current / beans.max * 100).toFixed(0);
+      const milkPct = (milk.current / milk.max * 100).toFixed(0);
+      const cupsPct = (cups.current / cups.max * 100).toFixed(0);
+      
+      let critical = [];
+      if (beansPct < 35) critical.push('Coffee Beans');
+      if (milkPct < 35) critical.push('Milk');
+      if (cupsPct < 35) critical.push('Cups');
+      
+      if (critical.length > 0) {
+        this._pendingRecommendation = {
+          action: 'restock_inventory', title: 'Emergency Restock Required',
+          observation: `${critical.join(', ')} stock below 35% capacity.`,
+          reasoning: 'Low stock leads to order cancellations and lost revenue during peak hours.',
+          assumptions: 'Campus supply courier is available.',
+          confidencePct: 96, cost: '₹500', benefit: 'Stock restored to 100%', roi: '320%', timeToImpact: 'Immediate'
+        };
+      }
+      
+      return `**Inventory Analysis:**\n- ☕ Coffee Beans: **${beans.current.toFixed(1)}kg / ${beans.max}kg** (${beansPct}%) ${beansPct < 35 ? '🔴 LOW' : '🟢'}\n- 🥛 Milk: **${milk.current.toFixed(1)}L / ${milk.max}L** (${milkPct}%) ${milkPct < 35 ? '🔴 LOW' : '🟢'}\n- 🥤 Cups: **${cups.current} / ${cups.max}** (${cupsPct}%) ${cupsPct < 35 ? '🔴 LOW' : '🟢'}\n${critical.length > 0 ? `\n**⚠ ${critical.join(' & ')} running critically low — restock recommended!**` : '\n✅ All stock levels are healthy.'}`;
     }
 
-    // 4. Reputation / Wait time / Queue queries
-    if (p.includes('reputation') || p.includes('satisfaction') || p.includes('wait') || p.includes('queue') || p.includes('status')) {
-      return `**Café Operations Audit (Local Mode):**
-- Café Reputation: **${state.cafeReputation}/100** (Rolling target).
-- Customer Satisfaction: **${state.customerSatisfaction}%**.
-- Current Queue: **${state.customers.queueLength} students** waiting.
-- Average Wait Time: **${state.customers.avgWaitTime.toFixed(1)} minutes**.
-
-*Operational recommendation:* Monitor queue length carefully. A queue exceeding 8 students will trigger active satisfaction penalties.`;
+    // --- Queue / Wait / Satisfaction ---
+    if (p.includes('queue') || p.includes('wait') || p.includes('satisfaction') || p.includes('reputation') || p.includes('customer')) {
+      const qLen = state.customers.queueLength;
+      const sat = state.customerSatisfaction;
+      const rep = state.cafeReputation;
+      const avgWait = state.customers.avgWaitTime;
+      
+      let analysis = '';
+      if (qLen > 8) analysis = '\n\n**🔴 Critical:** Queue is dangerously long. Customers will start leaving. Hire temp staff immediately.';
+      else if (qLen > 5) analysis = '\n\n**⚠ Warning:** Queue building up. Consider adding staff or speeding up service.';
+      else if (sat < 60) analysis = '\n\n**⚠ Warning:** Satisfaction is dropping. Check wait times and machine health.';
+      else analysis = '\n\n✅ Operations are running smoothly.';
+      
+      return `**Customer & Queue Analysis:**\n- Queue Length: **${qLen} students** ${qLen > 5 ? '⚠' : '✅'}\n- Avg Wait Time: **${avgWait.toFixed(1)} min**\n- Satisfaction: **${sat}%** ${sat > 80 ? '(excellent)' : sat > 60 ? '(good)' : '(needs attention)'}\n- Reputation: **${rep}/100**${analysis}`;
     }
 
-    // 5. Help / instructions queries
-    if (p.includes('help') || p.includes('how') || p.includes('what') || p.includes('do')) {
-      return `I am here to guide you in managing the Smart Campus Café! You can ask me to:
-1. **Analyze barista performance** to rotate Emma, Sophia, and Liam.
-2. **Perform an inventory check** to look up dairy and bean levels.
-3. **Audit café status** to check wait times and queue lengths.
-
-*Tip:* To enable live LLM reasoning, go to **Settings** and input your **Gemini API Key**!`;
+    // --- Revenue / Sales ---
+    if (p.includes('revenue') || p.includes('sales') || p.includes('money') || p.includes('profit') || p.includes('earning') || p.includes('income')) {
+      const elapsedHours = Math.max(0.1, (state.clock.hours + state.clock.minutes / 60) - 6);
+      const hourlyRate = (state.revenue / elapsedHours).toFixed(2);
+      const projected = (parseFloat(hourlyRate) * 12).toFixed(2);
+      return `**Revenue Report:**\n- Total Today: **$${state.revenue.toFixed(2)}**\n- Orders: **${state.orders.completed}** completed, **${state.orders.cancelled}** cancelled\n- Hourly Rate: **$${hourlyRate}/hr**\n- Projected Daily: **$${projected}**\n${state.orders.cancelled > 3 ? '\n⚠ High cancellation rate — check inventory and wait times.' : '\n✅ Revenue trajectory looks healthy.'}`;
     }
 
-    // 6. Revenue / sales queries
-    if (p.includes('revenue') || p.includes('sales') || p.includes('money') || p.includes('profit') || p.includes('earnings')) {
-      const hourlyRate = state.revenue > 0 ? (state.revenue / Math.max(0.1, (state.clock.hours + state.clock.minutes / 60) - 6)).toFixed(2) : '0.00';
-      return `**Revenue Report (Local Mode):**
-- Total Revenue Today: **$${state.revenue.toFixed(2)}**
-- Orders Completed: **${state.orders.completed}**
-- Hourly Run Rate: **$${hourlyRate}/hour**
-- Projected Closing: **$${(parseFloat(hourlyRate) * 12).toFixed(2)}** (based on current pace)
-
-*Tip:* Promote premium specialty drinks and baked goods combos to boost average order value.`;
+    // --- Machine / Maintenance ---
+    if (p.includes('machine') || p.includes('espresso') || p.includes('equipment') || p.includes('maintenance') || p.includes('calibrat')) {
+      const health = state.machineHealth;
+      
+      if (health < 70) {
+        this._pendingRecommendation = {
+          action: 'calibrate_machines', title: 'Calibrate Espresso Systems',
+          observation: `Machine health at ${health}% — risk of thermal failure.`,
+          reasoning: 'Calibrating pressure and temperature systems prevents breakdowns during peak hours.',
+          assumptions: 'Spare parts available; no power outages.',
+          confidencePct: 88, cost: '₹350', benefit: 'Machine health restored to 100%', roi: '210%', timeToImpact: '15 minutes'
+        };
+      }
+      
+      return `**Equipment Status:**\n- Machine Health: **${health}%** ${health > 80 ? '✅' : health > 50 ? '⚠' : '🔴'}\n- ${health > 80 ? 'Operating normally. No maintenance needed.' : health > 50 ? 'Performance degrading — schedule calibration soon.' : 'CRITICAL — failure imminent! Run maintenance NOW.'}\n${health < 70 ? '\n**Recommendation:** Calibrate immediately to prevent downtime.' : ''}`;
     }
 
-    // 7. Machine / equipment queries
-    if (p.includes('machine') || p.includes('espresso') || p.includes('equipment') || p.includes('maintenance')) {
-      return `**Equipment Status (Local Mode):**
-- Espresso Machine Health: **${state.machineHealth}%**
-- ${state.machineHealth > 80 ? '✅ Machine is operating normally.' : state.machineHealth > 50 ? '⚠ Machine needs attention soon — schedule calibration.' : '🔴 Critical — machine failure risk is high. Run maintenance immediately.'}
-
-*Recommendation:* ${state.machineHealth < 75 ? 'Run preventive calibration now to avoid thermal failure during peak hours.' : 'No immediate action needed. Monitor during rush periods.'}`;
+    // --- Weather ---
+    if (p.includes('weather') || p.includes('rain') || p.includes('sunny') || p.includes('temperature') || p.includes('forecast')) {
+      const w = state.weather;
+      const tip = w.condition === 'Rainy' ? '☔ Hot drinks demand +25%. Promote Hot Chocolate & Chai.'
+        : w.condition === 'Sunny' ? '☀ Cold drinks trending. Feature Cold Brew & Iced Latte.'
+        : '🌤 Moderate weather. Standard menu expected.';
+      return `**Weather Impact:**\n- Conditions: **${w.condition}, ${w.temp}°C**\n- ${tip}`;
     }
 
-    // 8. Weather queries
-    if (p.includes('weather') || p.includes('rain') || p.includes('sunny') || p.includes('temperature')) {
-      return `**Weather Impact Analysis (Local Mode):**
-- Current Conditions: **${state.weather.condition}, ${state.weather.temp}°C**
-- ${state.weather.condition === 'Rainy' ? '☔ Rain increases hot drink demand by ~25%. Consider promoting Hot Chocolate and Chai specials.' : state.weather.condition === 'Sunny' ? '☀ Sunny weather boosts iced and cold brew orders. Feature Cold Brew and Iced Latte.' : '🌤 Moderate conditions. Standard menu mix expected.'}`;
+    // --- Optimize / Suggest / Recommend ---
+    if (p.includes('optimize') || p.includes('suggest') || p.includes('recommend') || p.includes('improve') || p.includes('advice') || p.includes('what should')) {
+      const issues = [];
+      if (state.customers.queueLength > 5) issues.push(`Queue is long (${state.customers.queueLength}) — **hire temp staff**`);
+      if (state.machineHealth < 70) issues.push(`Machine health low (${state.machineHealth}%) — **run calibration**`);
+      if (state.inventory.coffeeBeans.current / state.inventory.coffeeBeans.max < 0.35) issues.push('Coffee beans running low — **restock now**');
+      if (state.inventory.milk.current / state.inventory.milk.max < 0.35) issues.push('Milk supply low — **restock now**');
+      if (state.customerSatisfaction < 65) issues.push(`Satisfaction dropping (${state.customerSatisfaction}%) — **reduce wait times**`);
+      
+      const emma = state.staff.list.find(b => b.name === 'Emma');
+      if (emma?.stress > 70) issues.push(`Emma's stress at ${emma.stress}% — **rotate her off register**`);
+      
+      if (issues.length === 0) {
+        return `**Operations Analysis:** ✅ Everything looks great!\n\nAll metrics are within healthy ranges. Keep monitoring during the next class break rush.\n\n- Queue: ${state.customers.queueLength} students\n- Satisfaction: ${state.customerSatisfaction}%\n- Machine: ${state.machineHealth}%\n- Revenue: $${state.revenue.toFixed(2)}`;
+      }
+      return `**Operations Analysis — ${issues.length} issue${issues.length > 1 ? 's' : ''} found:**\n${issues.map((issue, i) => `${i+1}. ${issue}`).join('\n')}\n\nWould you like me to act on any of these?`;
     }
 
-    // Generic contextual fallback
-    const qLen = state.customers.queueLength;
-    const sat = state.customerSatisfaction;
-    return `**Quick Café Snapshot:**
-- Queue: **${qLen} students** ${qLen > 5 ? '(congested ⚠)' : '(manageable ✅)'}
-- Satisfaction: **${sat}%** ${sat > 80 ? '(excellent)' : sat > 60 ? '(good)' : '(needs attention)'}
-- Revenue: **$${state.revenue.toFixed(2)}** across ${state.orders.completed} orders
-- Machine Health: **${state.machineHealth}%**
+    // --- Help ---
+    if (p.includes('help') || p === 'commands' || p === '?') {
+      return `Here's what I can help with:\n\n- *"How are my baristas doing?"* — Staff performance analysis\n- *"Check inventory"* — Stock level audit\n- *"What's our revenue?"* — Sales & earnings report\n- *"Queue status"* — Wait times & satisfaction\n- *"Machine health"* — Equipment diagnostics\n- *"Optimize operations"* — Find & fix issues\n- *"Is LM Studio working?"* — AI connection status\n- *"Weather impact"* — Weather-based menu suggestions\n\n**Voice commands:** *"Run rain simulation"*, *"Prepare for lunch rush"*, *"Generate report"*`;
+    }
 
-Ask me about *staff*, *inventory*, *revenue*, *machine health*, or *weather impact* for detailed analysis!`;
+    // --- Intelligent contextual fallback: analyze state and give the most relevant insight ---
+    const issues = [];
+    if (state.customers.queueLength > 5) issues.push('high queue');
+    if (state.machineHealth < 70) issues.push('machine issues');
+    if (state.customerSatisfaction < 65) issues.push('low satisfaction');
+    if (state.inventory.coffeeBeans.current / state.inventory.coffeeBeans.max < 0.35) issues.push('low beans');
+    if (state.inventory.milk.current / state.inventory.milk.max < 0.35) issues.push('low milk');
+    
+    if (issues.length > 0) {
+      return `I'm not sure what you mean by *"${prompt}"*, but I noticed some issues:\n\n${issues.map(i => `- ⚠ **${i.charAt(0).toUpperCase() + i.slice(1)}**`).join('\n')}\n\nTry asking *"optimize operations"* for detailed recommendations, or type *"help"* to see what I can do.`;
+    }
+    
+    return `Thanks for the message! I analyzed your current state and everything looks healthy:\n\n- Queue: **${state.customers.queueLength}** students ✅\n- Satisfaction: **${state.customerSatisfaction}%** ✅\n- Revenue: **$${state.revenue.toFixed(2)}**\n- Machine: **${state.machineHealth}%** ✅\n\nTry asking me something specific like *"check inventory"*, *"staff performance"*, or *"optimize operations"*. Type *"help"* for all commands.`;
   }
 
   /**

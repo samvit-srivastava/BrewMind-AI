@@ -785,11 +785,12 @@ class AppController {
     simulation.start();
   }
 
-  /**
-   * Reads theme config from cache and applies it to body.
-   */
   setupTheme() {
-    const theme = memory.preferences.theme;
+    let theme = memory.preferences.theme;
+    if (theme === 'latte-light') {
+      theme = 'dark';
+      memory.updatePreferences({ theme: 'dark' });
+    }
     document.body.className = `theme-${theme}`;
   }
 
@@ -1155,9 +1156,15 @@ class AppController {
   /**
    * Computes dynamic greetings based on hours.
    */
-  getGreeting() {
-    const state = window.BrewMind.getState();
-    const hours = state.clock.hours;
+  getGreeting(hours) {
+    if (hours === undefined) {
+      try {
+        const state = window.BrewMind.getState();
+        hours = state?.clock?.hours !== undefined ? state.clock.hours : 7;
+      } catch (e) {
+        hours = 7;
+      }
+    }
     if (hours < 12) return 'Good Morning';
     if (hours < 17) return 'Good Afternoon';
     return 'Good Evening';
@@ -1352,18 +1359,57 @@ class AppController {
    * Continuous update functions for Dashboard panels.
    */
   updateDashboardKPIs(state) {
-    // 1. Campus Command Center Update
+    // 1. Campus Command Center Update (Animated with progress rings)
     const cmdAct = document.getElementById('cmd-activity');
     const cmdPop = document.getElementById('cmd-population');
     const cmdCust = document.getElementById('cmd-customers');
     const cmdRush = document.getElementById('cmd-next-rush');
     const cmdRev = document.getElementById('cmd-pred-revenue');
-
+    
     if (cmdAct) cmdAct.innerText = state.campusActivity || 'Normal';
-    if (cmdPop) cmdPop.innerText = (state.campusPopulation || 15000).toLocaleString();
-    if (cmdCust) cmdCust.innerText = state.customers.inside;
     if (cmdRush) cmdRush.innerText = state.expectedNextRush || 'Closed';
-    if (cmdRev) cmdRev.innerText = `$${(state.predictions?.closingRevenue || 0).toFixed(2)}`;
+
+    // Animate command center values
+    const animateElementCount = (el, target, prefix = '', suffix = '', isFloat = false) => {
+      if (!el) return;
+      const current = parseFloat(el.innerText.replace(/[^0-9.]/g, '')) || 0;
+      const obj = { val: current };
+      gsap.to(obj, {
+        val: target,
+        duration: 0.5,
+        onUpdate: () => {
+          el.innerText = isFloat 
+            ? `${prefix}${obj.val.toFixed(2)}${suffix}`
+            : `${prefix}${Math.round(obj.val).toLocaleString()}${suffix}`;
+        }
+      });
+    };
+
+    animateElementCount(cmdPop, state.campusPopulation || 11966);
+    animateElementCount(cmdCust, state.customers.inside);
+    animateElementCount(cmdRev, state.predictions?.closingRevenue || 0, '$', '', true);
+
+    // Update campus population ring
+    const popRing = document.getElementById('cmd-population-ring');
+    const popPctText = document.getElementById('cmd-population-pct');
+    if (popRing && popPctText) {
+      const maxCampusCap = 25000;
+      const pct = Math.min(Math.round((state.campusPopulation / maxCampusCap) * 100), 100);
+      popPctText.innerText = `${pct}%`;
+      const offset = 113 - (113 * pct) / 100;
+      popRing.setAttribute('stroke-dashoffset', offset);
+    }
+
+    // Update active customers ring
+    const custRing = document.getElementById('cmd-customers-ring');
+    const custPctText = document.getElementById('cmd-customers-pct');
+    if (custRing && custPctText) {
+      const maxShopCapacity = 50;
+      const pct = Math.min(Math.round((state.customers.inside / maxShopCapacity) * 100), 100);
+      custPctText.innerText = `${pct}%`;
+      const offset = 113 - (113 * pct) / 100;
+      custRing.setAttribute('stroke-dashoffset', offset);
+    }
 
     // 2. Rolling history updates for 10 Sparklines
     const pushHistory = (key, val) => {
@@ -1405,52 +1451,114 @@ class AppController {
     this.drawSparkline('spark-staff', this.kpiHistory.staff);
     this.drawSparkline('spark-ai', this.kpiHistory.ai);
 
-    // 3. KPI values update (with GSAP counters)
-    const updateVal = (id, targetVal, prefix = '', suffix = '') => {
+    // Update trend badges dynamically - minimalist text format
+    const updateTrend = (badgeId, history, isPercentage = false) => {
+      const el = document.getElementById(badgeId);
+      if (!el || !history || history.length < 2) return;
+      
+      const current = history[history.length - 1];
+      const previous = history[history.length - 2];
+      
+      let diff = current - previous;
+      let pct = 0;
+      if (previous !== 0) {
+        pct = (diff / Math.abs(previous)) * 100;
+      } else if (current !== 0) {
+        pct = 100;
+      }
+      
+      let text = '';
+      let color = '#938075'; // default muted
+      
+      if (badgeId.includes('revenue')) {
+        text = diff > 0.001 ? `↑ ${pct.toFixed(1)}%` : (diff < -0.001 ? `↓ ${Math.abs(pct).toFixed(1)}%` : 'Stable');
+        color = diff >= 0 ? '#10B981' : '#EF4444';
+      } else if (badgeId.includes('orders')) {
+        text = diff > 0.001 ? `↑ ${pct.toFixed(0)}%` : (diff < -0.001 ? `↓ ${Math.abs(pct).toFixed(0)}%` : 'Stable');
+        color = diff >= 0 ? '#10B981' : '#EF4444';
+      } else if (badgeId.includes('queue')) {
+        text = diff > 0.1 ? `↑ ${diff.toFixed(0)}` : (diff < -0.1 ? `↓ ${Math.abs(diff).toFixed(0)}` : 'Stable');
+        // Queue size increasing is BAD (red), decreasing is GOOD (green)
+        color = diff > 0.1 ? '#EF4444' : '#10B981';
+      } else if (badgeId.includes('wait')) {
+        text = diff > 0.01 ? `↑ ${pct.toFixed(0)}%` : (diff < -0.01 ? `↓ ${Math.abs(pct).toFixed(0)}%` : 'Optimal');
+        // Wait time increasing is BAD (red), decreasing is GOOD (green)
+        color = diff > 0.01 ? '#EF4444' : '#10B981';
+      } else if (badgeId.includes('inventory')) {
+        text = diff > 0.01 ? `↑ ${pct.toFixed(0)}%` : (diff < -0.01 ? `↓ ${Math.abs(pct).toFixed(0)}%` : 'Optimal');
+        color = diff >= 0 ? '#10B981' : '#EF4444';
+      } else if (badgeId.includes('machine')) {
+        text = diff > 0.1 ? `↑ ${pct.toFixed(0)}%` : (diff < -0.1 ? `↓ ${Math.abs(pct).toFixed(0)}%` : 'Stable');
+        color = current >= 80 ? '#10B981' : (current >= 50 ? '#F59E0B' : '#EF4444');
+      } else if (badgeId.includes('satisfaction')) {
+        text = diff > 0.01 ? `↑ ${pct.toFixed(0)}%` : (diff < -0.01 ? `↓ ${Math.abs(pct).toFixed(0)}%` : 'Stable');
+        color = diff >= 0 ? '#10B981' : '#EF4444';
+      } else if (badgeId.includes('reputation')) {
+        text = diff > 0.1 ? `↑ ${diff.toFixed(0)} pts` : (diff < -0.1 ? `↓ ${Math.abs(diff).toFixed(0)} pts` : 'Stable');
+        color = diff >= 0 ? '#F59E0B' : '#EF4444';
+      } else if (badgeId.includes('staff')) {
+        text = current >= 1.0 ? 'Active' : 'Standby';
+        color = '#10B981';
+      } else if (badgeId.includes('ai')) {
+        text = current >= 80 ? 'High' : (current >= 50 ? 'Medium' : 'Low');
+        color = '#10B981';
+      }
+      
+      el.style.color = color;
+      el.style.background = 'none';
+      el.style.border = 'none';
+      el.style.padding = '0';
+      el.textContent = text;
+    };
+    
+    updateTrend('trend-revenue', this.kpiHistory.revenue);
+    updateTrend('trend-orders', this.kpiHistory.orders, true);
+    updateTrend('trend-queue', this.kpiHistory.queue, true);
+    updateTrend('trend-wait', this.kpiHistory.wait);
+    updateTrend('trend-inventory-health', this.kpiHistory.inventoryHealth, true);
+    updateTrend('trend-machine-health', this.kpiHistory.machineHealth, true);
+    updateTrend('trend-satisfaction', this.kpiHistory.satisfaction, true);
+    updateTrend('trend-reputation', this.kpiHistory.reputation, true);
+    updateTrend('trend-staff', this.kpiHistory.staff);
+    updateTrend('trend-ai', this.kpiHistory.ai, true);
+    
+    if (window.lucide) lucide.createIcons();
+
+    // 3. KPI values update (with GSAP counters - animated all 10 cards)
+    const updateVal = (id, targetVal, prefix = '', suffix = '', decimals = 0) => {
       const el = document.getElementById(id);
       if (!el) return;
       
-      const current = parseFloat(el.innerText.replace(/[^0-9.]/g, '')) || 0;
-      const obj = { val: current };
+      if (el._lastVal === undefined) {
+        let cleanText = el.innerText;
+        if (suffix) {
+          cleanText = cleanText.replace(suffix, '');
+        }
+        el._lastVal = parseFloat(cleanText.replace(/[^0-9.-]/g, '')) || 0;
+      }
+      
+      const obj = { val: el._lastVal };
       
       gsap.to(obj, {
         val: targetVal,
-        duration: 0.4,
-        snap: 'val',
+        duration: 0.5,
         onUpdate: () => {
-          if (prefix === '$') {
-            el.innerText = `${prefix}${obj.val.toFixed(2)}${suffix}`;
-          } else {
-            el.innerText = `${prefix}${Math.round(obj.val)}${suffix}`;
-          }
+          el.innerText = `${prefix}${obj.val.toFixed(decimals)}${suffix}`;
+          el._lastVal = obj.val;
         }
       });
     };
 
-    updateVal('val-revenue', state.revenue, '$');
-    updateVal('val-orders', state.orders.completed);
-    updateVal('val-queue', state.customers.queueLength);
-    
-    const waitVal = document.getElementById('val-wait');
-    if (waitVal) waitVal.innerText = `${state.customers.avgWaitTime.toFixed(1)}m`;
-
-    const satisfactionVal = document.getElementById('val-satisfaction');
-    if (satisfactionVal) satisfactionVal.innerText = `${state.customerSatisfaction}%`;
-
-    const reputationVal = document.getElementById('val-reputation');
-    if (reputationVal) reputationVal.innerText = `${state.cafeReputation}/100`;
-
-    const staffVal = document.getElementById('val-staff');
-    if (staffVal) staffVal.innerText = `${staffEff.toFixed(1)}x`;
-
-    const aiVal = document.getElementById('val-ai');
-    if (aiVal) aiVal.innerText = `${state.aiConfidence}%`;
-
-    const invVal = document.getElementById('val-inventory-health');
-    if (invVal) invVal.innerText = `${invHealth}%`;
-
-    const machVal = document.getElementById('val-machine-health');
-    if (machVal) machVal.innerText = `${state.machineHealth}%`;
+    updateVal('val-revenue', state.revenue, '$', '', 2);
+    updateVal('val-orders', state.orders.completed, '', '', 0);
+    updateVal('val-queue', state.customers.queueLength, '', '', 0);
+    updateVal('val-wait', state.customers.avgWaitTime, '', 'm', 1);
+    updateVal('val-inventory-health', invHealth, '', '%', 0);
+    updateVal('val-machine-health', state.machineHealth, '', '%', 0);
+    updateVal('val-satisfaction', state.customerSatisfaction, '', '%', 0);
+    updateVal('val-reputation', state.cafeReputation, '', '/100', 0);
+    updateVal('val-staff', staffEff, '', 'x', 1);
+    updateVal('val-ai', state.aiConfidence, '', '%', 0);
 
     // 4. Threshold alarm glow classes
     const toggleGlow = (cardId, trigger) => {
@@ -1498,6 +1606,14 @@ class AppController {
     if (predInv) predInv.innerHTML = `${state.predictions.inventoryHoursRemaining} hours <span style="font-size:0.6rem; font-weight:normal; color:var(--text-muted);">(95% conf)</span>`;
     if (predSat) predSat.innerHTML = `${state.predictions.expectedSatisfaction}% <span style="font-size:0.6rem; font-weight:normal; color:var(--text-muted);">(88% conf)</span>`;
 
+    // Update simulated "Updated [Time]" telemetry strings
+    const simTimeStr = formatSimulationTime(state.clock.hours, state.clock.minutes);
+    const timeKeys = ['revenue', 'orders', 'queue', 'wait', 'inventory-health', 'machine-health', 'satisfaction', 'reputation', 'staff', 'ai'];
+    timeKeys.forEach(k => {
+      const timeEl = document.getElementById(`time-${k}`);
+      if (timeEl) timeEl.innerText = `${simTimeStr} (sim)`;
+    });
+
     // 8. Call extra panels update sub-methods
     this.updateBrainObservationsUI(state);
     this.updateDailyJournalUI(state);
@@ -1515,16 +1631,24 @@ class AppController {
     
     const points = dataArray.map((val, idx) => {
       const x = (idx / (dataArray.length - 1)) * 100;
-      const y = 28 - ((val - min) / range) * 26; 
+      const y = 26 - ((val - min) / range) * 22; // Keep 4px vertical safety margin
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     });
     
     path.setAttribute('d', `M ${points.join(' L ')}`);
+    
+    // Update the smooth gradient area fill path
+    const areaPath = document.getElementById(svgPathId + '-area');
+    if (areaPath) {
+      areaPath.setAttribute('d', `M 0 30 L ${points.join(' L ')} L 100 30 Z`);
+    }
   }
 
   updateBrainObservationsUI(state) {
     const container = document.getElementById('brain-observations-container');
     if (!container) return;
+
+
 
     if (!state.brainInsights || state.brainInsights.length === 0) {
       container.innerHTML = `
@@ -1572,25 +1696,35 @@ class AppController {
     const state = window.BrewMind.getState();
     
     if (flag === 'restock-milk') {
-      const diff = state.inventory.milk.max - state.inventory.milk.current;
+      const targetLimit = state.inventory.milk.max * 0.45;
+      const diff = Math.max(0, parseFloat((targetLimit - state.inventory.milk.current).toFixed(1)));
       const cost = diff * state.inventory.milk.price;
+      if (diff <= 0) {
+        this.showToast('Milk Already Fresh', 'No JIT replenishment required.', 'info');
+        return;
+      }
       if (state.revenue >= cost) {
         state.revenue = parseFloat((state.revenue - cost).toFixed(2));
-        state.inventory.milk.current = state.inventory.milk.max;
+        state.inventory.milk.current = parseFloat(targetLimit.toFixed(1));
         state.warnings.lowStock.milk = false;
-        this.showToast('Restocked Milk', `Dairy supplies filled. Cost: $${cost.toFixed(2)}`, 'success');
+        this.showToast('Restocked Milk', `Dairy supplies JIT filled. Cost: $${cost.toFixed(2)}`, 'success');
         if (memory.preferences.soundEnabled) soundEffects.playSuccess();
       } else {
         this.showToast('Insufficient Cash', 'Cannot afford stock replenishment.', 'danger');
       }
     } else if (flag === 'restock-beans') {
-      const diff = state.inventory.coffeeBeans.max - state.inventory.coffeeBeans.current;
+      const targetLimit = state.inventory.coffeeBeans.max * 0.60;
+      const diff = Math.max(0, parseFloat((targetLimit - state.inventory.coffeeBeans.current).toFixed(1)));
       const cost = diff * state.inventory.coffeeBeans.price;
+      if (diff <= 0) {
+        this.showToast('Beans Already Fresh', 'No JIT replenishment required.', 'info');
+        return;
+      }
       if (state.revenue >= cost) {
         state.revenue = parseFloat((state.revenue - cost).toFixed(2));
-        state.inventory.coffeeBeans.current = state.inventory.coffeeBeans.max;
+        state.inventory.coffeeBeans.current = parseFloat(targetLimit.toFixed(1));
         state.warnings.lowStock.coffeeBeans = false;
-        this.showToast('Restocked Beans', `Espresso roast filled. Cost: $${cost.toFixed(2)}`, 'success');
+        this.showToast('Restocked Beans', `Espresso roast JIT filled. Cost: $${cost.toFixed(2)}`, 'success');
         if (memory.preferences.soundEnabled) soundEffects.playSuccess();
       } else {
         this.showToast('Insufficient Cash', 'Cannot afford stock replenishment.', 'danger');
@@ -1667,8 +1801,10 @@ class AppController {
 
     productsData.sort((a, b) => b.count - a.count);
     
+    const maxSales = Math.max(...productsData.map(p => p.count), 1);
+    
     let html = '';
-    productsData.slice(0, 5).forEach(prod => {
+    productsData.slice(0, 5).forEach((prod, idx) => {
       let factorText = 'Neutral';
       let factorColor = 'var(--text-muted)';
       if (state.weather.condition === 'Rainy') {
@@ -1678,12 +1814,24 @@ class AppController {
         if (prod.item.category === 'Cold Drinks') { factorText = 'High demand'; factorColor = 'var(--color-success)'; }
       }
 
+      const fillPct = (prod.count / maxSales) * 100;
+
       html += `
-        <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
-          <td style="padding: 0.4rem 0; font-weight: 600; color: #FFF;">${prod.key}</td>
-          <td style="padding: 0.4rem 0; text-align: right;">${prod.count}</td>
-          <td style="padding: 0.4rem 0; text-align: right; color: var(--color-success); font-weight: 600;">$${prod.rev.toFixed(2)}</td>
-          <td style="padding: 0.4rem 0; text-align: right; color: ${factorColor}; font-weight: 500;">${factorText}</td>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.025);">
+          <td style="padding: 0.6rem 0; vertical-align: middle;">
+            <div style="font-weight: 700; color: #FFF; display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 0.72rem; color: var(--color-primary); font-family: var(--font-display); width: 14px; text-align: center;">#${idx+1}</span>
+              <span>${prod.key}</span>
+            </div>
+            <div style="width: 100px; height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; margin-top: 0.35rem; overflow: hidden;">
+              <div style="width: ${fillPct}%; height: 100%; background: linear-gradient(90deg, var(--color-primary), #8C5A3C); border-radius: 2px;"></div>
+            </div>
+          </td>
+          <td style="padding: 0.6rem 0; text-align: right; font-weight: 600; color: #FFF; vertical-align: middle;">${prod.count}</td>
+          <td style="padding: 0.6rem 0; text-align: right; color: var(--color-success); font-weight: 700; vertical-align: middle;">$${prod.rev.toFixed(2)}</td>
+          <td style="padding: 0.6rem 0; text-align: right; vertical-align: middle;">
+            <span style="font-size: 0.62rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 0.12rem 0.35rem; border-radius: 4px; color: ${factorColor}; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2px;">${factorText}</span>
+          </td>
         </tr>
       `;
     });
@@ -1763,40 +1911,78 @@ class AppController {
   }
 
   setupSimulationClockControls() {
-    const btnPlay = document.getElementById('sim-btn-play');
-    const btnPause = document.getElementById('sim-btn-pause');
-    const speedSelect = document.getElementById('sim-speed-select');
-    
-    if (btnPlay) {
-      btnPlay.addEventListener('click', () => {
-        simulation.start();
+    const playToggleBtn = document.getElementById('sim-btn-play-toggle');
+    const speedButtons = document.querySelectorAll('.sim-speed-btn');
+
+    if (playToggleBtn) {
+      playToggleBtn.addEventListener('click', () => {
+        const isRunning = simulation.isRunning;
+        if (isRunning) {
+          simulation.pause();
+        } else {
+          simulation.start();
+        }
         if (memory.preferences.soundEnabled) soundEffects.playClick();
-        btnPlay.style.color = 'var(--color-primary)';
-        if (btnPause) btnPause.style.color = 'var(--text-secondary)';
+        this.syncSimulationPlayToggleUI();
       });
     }
-    if (btnPause) {
-      btnPause.addEventListener('click', () => {
-        simulation.pause();
-        if (memory.preferences.soundEnabled) soundEffects.playClick();
-        btnPause.style.color = 'var(--color-primary)';
-        if (btnPlay) btnPlay.style.color = 'var(--text-secondary)';
-      });
-    }
-    if (speedSelect) {
-      speedSelect.addEventListener('change', (e) => {
-        const speed = parseInt(e.target.value, 10);
+
+    // Set initial speed active state
+    const currentSpeed = simulation.speed || 5;
+    speedButtons.forEach(btn => {
+      const speedVal = parseInt(btn.getAttribute('data-speed'), 10);
+      if (speedVal === currentSpeed) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+
+      btn.addEventListener('click', (e) => {
+        const speed = parseInt(e.target.getAttribute('data-speed'), 10);
         simulation.changeSpeed(speed);
         if (memory.preferences.soundEnabled) soundEffects.playClick();
+
+        // Highlight active button
+        speedButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
       });
+    });
+  }
+
+  syncSimulationPlayToggleUI() {
+    const isRunning = simulation.isRunning;
+    const statusBadge = document.getElementById('sim-status-badge');
+    const statusLabel = document.getElementById('sim-status-label');
+    const playToggleBtn = document.getElementById('sim-btn-play-toggle');
+
+    if (playToggleBtn) {
+      if (isRunning) {
+        playToggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause" style="display: block;"><rect width="4" height="16" x="14" y="4" rx="1"/><rect width="4" height="16" x="6" y="4" rx="1"/></svg>`;
+        playToggleBtn.setAttribute('title', 'Pause Simulation');
+      } else {
+        playToggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play" style="display: block;"><polygon points="6 3 20 12 6 21 6 3"/></svg>`;
+        playToggleBtn.setAttribute('title', 'Resume Simulation');
+      }
+    }
+
+    if (statusLabel) {
+      statusLabel.innerText = isRunning ? 'Simulation Running' : 'Simulation Paused';
+    }
+
+    if (statusBadge) {
+      if (isRunning) {
+        statusBadge.classList.remove('paused');
+      } else {
+        statusBadge.classList.add('paused');
+      }
     }
   }
 
   updateActiveQueueUI(state) {
-    const queuePanel = document.querySelector('#view-dashboard .dashboard-panels-split > div:first-child');
+    const queuePanel = document.getElementById('active-queue-panel');
     if (!queuePanel) return;
 
-    const customers = state.customers.list.filter(c => c.status === 'Queue' || c.status === 'Preparing');
+    const customers = state.customers.list.filter(c => c.status === 'Queue' || c.status === 'Entering' || c.status === 'Preparing' || c.status === 'Completed');
 
     if (customers.length === 0) {
       queuePanel.innerHTML = `
@@ -1829,6 +2015,13 @@ class AppController {
 
       const progressPercent = Math.min(100, Math.round((c.waitingTime / c.waitingTolerance) * 100));
 
+      let statusLabel = c.status;
+      let statusColor = 'var(--text-secondary)';
+      if (c.status === 'Preparing') { statusColor = 'var(--color-primary)'; statusLabel = '☕ Preparing'; }
+      else if (c.status === 'Completed') { statusColor = 'var(--color-success)'; statusLabel = '✅ Dining'; moodIcon = 'coffee'; moodColor = 'var(--color-success)'; }
+      else if (c.status === 'Entering') { statusColor = '#3B82F6'; statusLabel = '🚶 Entering'; }
+      else if (c.status === 'Queue') { statusLabel = '⏳ In Queue'; }
+
       listHtml += `
         <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -1839,7 +2032,7 @@ class AppController {
             </div>
           </div>
           <div style="text-align: right; min-width: 120px;">
-            <div style="font-size: 0.78rem; font-weight: 600; color: ${c.status === 'Preparing' ? 'var(--color-primary)' : 'var(--text-secondary)'};">${c.status}</div>
+            <div style="font-size: 0.78rem; font-weight: 600; color: ${statusColor};">${statusLabel}</div>
             <div style="width: 100px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; margin-top: 0.25rem; display: inline-block;">
               <div style="width: ${progressPercent}%; height: 100%; background: ${moodColor}; transition: width 0.4s ease;"></div>
             </div>
@@ -1867,7 +2060,7 @@ class AppController {
   }
 
   updateAdvisoryUI(state) {
-    const advisoryPanel = document.querySelector('#view-dashboard .dashboard-panels-split > div:last-child');
+    const advisoryPanel = document.getElementById('operational-advisory-panel');
     if (!advisoryPanel) return;
 
     const alerts = state.notifications.items.slice(0, 4);
@@ -1923,27 +2116,33 @@ class AppController {
     window.BrewMind.subscribe('brewmind:statechange', (e) => {
       const state = e.detail;
 
-      // 1. Live Clock display
-      const clockWidget = document.getElementById('widget-clock');
-      if (clockWidget) {
-        clockWidget.innerText = formatSimulationTime(state.clock.hours, state.clock.minutes);
+      // 1. Live Clock & Dynamic Date display
+      const dateWidget = document.getElementById('header-date');
+      if (dateWidget) {
+        const dayNum = state.clock.day || 1;
+        const baseDate = new Date('2026-06-30T07:00:00');
+        baseDate.setDate(baseDate.getDate() + (dayNum - 1));
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateStr = baseDate.toLocaleDateString('en-US', dateOptions);
+        const timeStr = formatSimulationTime(state.clock.hours, state.clock.minutes);
+        dateWidget.innerHTML = `${dateStr} &bull; ${timeStr}`;
       }
 
       // 2. Greeting displays
       const welcome = document.getElementById('header-welcome');
-      if (welcome && state.manager.name) {
-        welcome.innerText = `${this.getGreeting()}, ${state.manager.name}`;
+      if (welcome) {
+        const mgrName = state.manager.name || memory.profile.managerName || 'Alex';
+        welcome.innerHTML = `${this.getGreeting(state.clock.hours)}, ${mgrName} 👋`;
       }
 
       // 3. Live Weather displays
-      const weatherText = document.getElementById('widget-weather-text');
+      const weatherMain = document.getElementById('widget-weather-main');
+      const weatherFeels = document.getElementById('widget-weather-feels');
       const weatherIcon = document.getElementById('widget-weather-icon');
-      if (weatherText) {
-        let wt = `${state.weather.condition}, ${state.weather.temp}°C`;
-        if (state.weather.wind !== undefined) {
-          wt += ` • Wind: ${state.weather.wind} km/h • Hum: ${state.weather.humidity}%`;
-        }
-        weatherText.innerText = wt;
+      if (weatherMain && weatherFeels) {
+        weatherMain.innerText = `${state.weather.condition}, ${state.weather.temp}°C`;
+        const feelsLike = state.weather.temp + (state.weather.humidity > 60 ? 3 : (state.weather.humidity < 40 ? -1 : 1));
+        weatherFeels.innerText = `Feels like ${feelsLike}°C`;
       }
       if (weatherIcon) {
         let name = 'sun';
@@ -1955,23 +2154,42 @@ class AppController {
       }
 
       // 4. Store Health states indicators
-      const healthDot = document.getElementById('health-dot');
-      const healthLabel = document.getElementById('health-label');
-      if (healthDot && healthLabel) {
+      const statusDot = document.getElementById('system-status-dot');
+      const statusLabel = document.getElementById('system-status-label');
+      const statusBadge = document.getElementById('system-status-badge');
+      if (statusDot && statusLabel) {
         if (state.health === 'Nominal') {
-          healthDot.style.backgroundColor = 'var(--color-success)';
-          healthDot.style.boxShadow = '0 0 10px var(--color-success)';
-          healthLabel.innerText = 'System Stable';
+          statusDot.style.backgroundColor = '#10B981';
+          statusDot.style.boxShadow = '0 0 10px #10B981';
+          statusLabel.innerText = 'System Stable';
+          if (statusBadge) {
+            statusBadge.style.color = '#10B981';
+            statusBadge.style.background = 'rgba(16, 185, 129, 0.06)';
+            statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+          }
         } else if (state.health === 'Degraded') {
-          healthDot.style.backgroundColor = 'var(--color-warning)';
-          healthDot.style.boxShadow = '0 0 10px var(--color-warning)';
-          healthLabel.innerText = 'Service Congestion';
+          statusDot.style.backgroundColor = '#F59E0B';
+          statusDot.style.boxShadow = '0 0 10px #F59E0B';
+          statusLabel.innerText = 'Service Congestion';
+          if (statusBadge) {
+            statusBadge.style.color = '#F59E0B';
+            statusBadge.style.background = 'rgba(245, 158, 11, 0.06)';
+            statusBadge.style.borderColor = 'rgba(245, 158, 11, 0.2)';
+          }
         } else {
-          healthDot.style.backgroundColor = 'var(--color-danger)';
-          healthDot.style.boxShadow = '0 0 10px var(--color-danger)';
-          healthLabel.innerText = 'Critical Outage';
+          statusDot.style.backgroundColor = '#EF4444';
+          statusDot.style.boxShadow = '0 0 10px #EF4444';
+          statusLabel.innerText = 'Critical Outage';
+          if (statusBadge) {
+            statusBadge.style.color = '#EF4444';
+            statusBadge.style.background = 'rgba(239, 68, 68, 0.06)';
+            statusBadge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+          }
         }
       }
+
+      // 4b. Sync play/pause indicators
+      this.syncSimulationPlayToggleUI();
 
       // 5. Update notifications badge count
       const notifCount = document.getElementById('notifications-count');

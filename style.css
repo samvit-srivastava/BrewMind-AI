@@ -47,7 +47,7 @@
   
   /* Layout Spacing */
   --sidebar-width: 260px;
-  --header-height: 80px;
+  --header-height: 120px;
   --copilot-drawer-width: 420px;
   
   /* Transitions */
@@ -283,7 +283,7 @@ body {
 #app-layout {
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   position: relative;
   opacity: 0; /* Animated by GSAP on load */
@@ -305,7 +305,9 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  height: 52px; /* Centered layout matching header greeting height */
   margin-bottom: 2.5rem;
+  margin-top: 0.25rem; /* Perfectly centers the brand logo line with the header greeting line */
 }
 
 .brand-icon {
@@ -313,16 +315,17 @@ body {
   height: 32px;
   color: var(--color-primary);
   filter: drop-shadow(0 0 8px var(--color-primary-glow));
+  margin-top: -2px; /* Align visually with extra bold text font */
 }
 
 .brand-text {
   font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #FFF, var(--color-primary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #FFFFFF; /* High-contrast pure solid white */
+  display: inline-flex;
+  align-items: center;
 }
 
 .sidebar-nav {
@@ -466,14 +469,15 @@ body {
 /* --- Header --- */
 .header {
   height: var(--header-height);
-  border-bottom: 1px solid var(--glass-border);
-  padding: 0 2rem;
+  border-bottom: 1px solid rgba(212, 163, 115, 0.15); /* Premium glowing bronze border */
+  padding: 0 2.5rem; /* Wider padding for premium spacing */
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 90;
-  background: rgba(11, 8, 6, 0.5);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, rgba(28, 21, 18, 0.75) 0%, rgba(16, 12, 10, 0.75) 100%); /* Espresso glass gradient */
+  backdrop-filter: blur(16px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.45);
 }
 
 .header-left {
@@ -497,20 +501,117 @@ body {
 .header-center {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
-/* Widget Pill Styles */
+/* Simulation Controls Capsule (Premium) */
+.sim-control-capsule {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--glass-border);
+  padding: 0.35rem 0.85rem;
+  border-radius: 50px;
+  gap: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.sim-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #10B981;
+  letter-spacing: 0.2px;
+  transition: all 0.3s ease;
+}
+
+.sim-status-badge.paused {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #F59E0B;
+}
+
+.sim-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  display: inline-block;
+}
+
+.sim-control-divider {
+  width: 1px;
+  height: 18px;
+  background-color: var(--glass-border);
+}
+
+.sim-control-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.sim-control-btn:hover {
+  color: var(--color-primary);
+  transform: scale(1.1);
+}
+
+.sim-control-btn:active {
+  transform: scale(0.95);
+}
+
+.sim-speed-deck {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sim-speed-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-speed-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sim-speed-btn.active {
+  background: rgba(212, 163, 115, 0.08);
+  border: 1px solid rgba(212, 163, 115, 0.35);
+  color: var(--color-primary);
+  box-shadow: 0 0 8px rgba(212, 163, 115, 0.15);
+}
+
+/* Premium Weather stack */
 .header-widget {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.9rem;
   border-radius: 50px;
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-size: 0.88rem;
-  font-weight: 500;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -520,42 +621,51 @@ body {
   color: var(--color-primary);
 }
 
-.health-indicator {
+.weather-info-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+#widget-weather-main {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+#widget-weather-feels {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+/* System Stable Pill Badge */
+.header-status-badge {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 50px;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #10B981;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.health-dot {
-  width: 8px;
-  height: 8px;
+.status-badge-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background-color: var(--color-success);
-  box-shadow: 0 0 10px var(--color-success);
-  position: relative;
-}
-
-.health-dot.pulse::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: inherit;
-  animation: pulse-dot 1.8s infinite ease-out;
-}
-
-@keyframes pulse-dot {
-  0% { transform: scale(1); opacity: 0.8; }
-  100% { transform: scale(2.5); opacity: 0; }
+  background-color: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  display: inline-block;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .icon-btn {
@@ -1019,27 +1129,46 @@ body {
 
 /* Chat bubble placeholders */
 .chat-bubble {
-  padding: 1rem;
+  padding: 1rem 1.1rem;
   border-radius: 16px;
-  max-width: 85%;
-  font-size: 0.88rem;
-  line-height: 1.45;
+  max-width: 88%;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .chat-bubble.assistant {
-  background: rgba(212, 163, 115, 0.06);
-  border: 1px solid rgba(212, 163, 115, 0.1);
+  background: linear-gradient(135deg, rgba(212, 163, 115, 0.06) 0%, rgba(212, 163, 115, 0.02) 100%);
+  border: 1px solid rgba(212, 163, 115, 0.12);
   align-self: flex-start;
   color: var(--text-primary);
   border-bottom-left-radius: 4px;
+  backdrop-filter: blur(6px);
+}
+
+.chat-bubble.assistant strong {
+  color: #FFF;
 }
 
 .chat-bubble.user {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  background: linear-gradient(135deg, rgba(212, 163, 115, 0.15), rgba(212, 163, 115, 0.08));
+  border: 1px solid rgba(212, 163, 115, 0.2);
   align-self: flex-end;
   color: #FFF;
   border-bottom-right-radius: 4px;
+  font-weight: 500;
+}
+
+.chat-bubble.typing-dots {
+  background: rgba(212, 163, 115, 0.04);
+  border: 1px dashed rgba(212, 163, 115, 0.15);
+  animation: typing-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes typing-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 .drawer-footer {
@@ -1363,7 +1492,7 @@ body {
   }
   
   .header {
-    height: 70px;
+    height: 100px;
     padding: 0 1rem;
   }
   
@@ -1433,46 +1562,7 @@ body.theme-dark-modern {
   --glass-border-hover: rgba(99, 102, 241, 0.35);
 }
 
-/* 3. Cappuccino Light (Light Warm UI) */
-body.theme-latte-light {
-  --bg-base: #F8F5F2;
-  --bg-surface: #FFFFFF;
-  --bg-sidebar: #EFEBE7;
-  --color-primary: #8C6239;
-  --color-primary-hover: #9E744E;
-  --color-primary-glow: rgba(140, 98, 57, 0.12);
-  --color-gold: #BCA38A;
-  --color-gold-glow: rgba(188, 163, 138, 0.1);
-  --text-primary: #2C221A;
-  --text-secondary: #5E5045;
-  --text-muted: #918175;
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(140, 98, 57, 0.15);
-  --glass-border-hover: rgba(140, 98, 57, 0.3);
-}
 
-/* Specific component theme adaptations */
-body.theme-latte-light .card-kpi {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(245, 240, 235, 0.8));
-}
-body.theme-latte-light .placeholder-graphic {
-  background: rgba(0, 0, 0, 0.02);
-}
-body.theme-latte-light .sidebar-footer, body.theme-latte-light .sidebar-brand {
-  border-color: rgba(140, 98, 57, 0.15);
-}
-body.theme-latte-light .nav-item:hover {
-  background: rgba(140, 98, 57, 0.05);
-}
-body.theme-latte-light .nav-item.active {
-  background: rgba(140, 98, 57, 0.1);
-}
-body.theme-latte-light .profile-avatar {
-  background: #FFF;
-}
-body.theme-latte-light .kpi-value {
-  color: #2C221A;
-}
 
 /* --- Floating Background Particles (Coffee Dust) --- */
 .particles-container {
@@ -1570,12 +1660,174 @@ textarea:focus-visible {
   border-color: rgba(212, 163, 115, 0.2) !important;
   color: var(--color-primary) !important;
 }
-.scenario-select-card {
-  transition: var(--transition-normal);
-  border: 1px solid var(--glass-border);
-}
 .scenario-select-card:hover {
   background: rgba(212, 163, 115, 0.04) !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Premium Command Center & Dashboard Enhancements --- */
+.live-dot-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  display: inline-block;
+  animation: live-pulse-dot 1.2s infinite ease-out;
+}
+
+@keyframes live-pulse-dot {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.live-pulse-container {
+  margin-left: 0.4rem;
+}
+
+.pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  border-radius: 6px;
+  border: 1.5px solid rgba(16, 185, 129, 0.4);
+  pointer-events: none;
+  animation: ring-pulse-anim 1.8s infinite ease-out;
+}
+
+@keyframes ring-pulse-anim {
+  0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+}
+
+.command-stat-card {
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.command-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  border-color: rgba(212, 163, 115, 0.15) !important;
+}
+
+.kpi-trend-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-weight: 700;
+}
+
+/* Today's Goal Card Premium Styles */
+.premium-purple-card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Card KPI Premium Hover and Glow Effects */
+.card-kpi {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-kpi::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03), transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.card-kpi:hover::before {
+  opacity: 1;
+}
+
+.card-kpi:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  border-color: rgba(212, 163, 115, 0.35) !important;
+}
+
+/* Pulsing accent highlight for active stats */
+.card-kpi .kpi-icon-wrapper {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card-kpi:hover .kpi-icon-wrapper {
+  transform: scale(1.15) rotate(5deg);
+}
+
+/* Premium Command Center Stat Card Updates */
+.command-stat-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.command-stat-card:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  border-color: var(--color-primary) !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Animated Pulse backdrop glow for Command Center status indicator */
+.hero-command-center::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 163, 115, 0.03) 0%, transparent 60%);
+  pointer-events: none;
+  animation: slow-rotate-glow 25s infinite linear;
+}
+
+@keyframes slow-rotate-glow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes critical-pulse {
+  0% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+  50% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.35); border-color: rgba(239, 68, 68, 0.5); }
+  100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+}
+
+.card-ingredient.critical-stock {
+  animation: critical-pulse 2s infinite ease-in-out;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.02) !important;
+}
+
+.supplier-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.supplier-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.supplier-card:active {
+  transform: translateY(0);
+}
+
+.auto-toggle-wrapper input[type="checkbox"] {
+  width: 11px;
+  height: 11px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
 }

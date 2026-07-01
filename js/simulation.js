@@ -3,41 +3,52 @@
  * ------------------------------------------------------------- */
 
 import { generateObservations } from './brain.js';
+import { formatSimulationTime } from './utils.js';
+
+// Helper for JIT (Just-in-Time) smart target capacity limit for perishable freshness
+export function getSmartTargetLimit(key, max) {
+  const k = key.toLowerCase();
+  if (k.includes('milk')) return max * 0.45; // Milk decays fast (0.45/min), keep target low
+  if (k.includes('bread') || k.includes('muffin') || k.includes('brownie')) return max * 0.50; // Bakery decays fast (0.25/min)
+  if (k.includes('cheese')) return max * 0.60; // Cheese decays moderately (0.25/min)
+  if (k.includes('beans') || k.includes('coffee')) return max * 0.60; // Beans decay gradually (0.08/min)
+  return max;
+}
 
 // Extended Menu System containing Coffee, Cold Drinks, Tea, Food, and Other products
 export const DRINK_MENU = {
   // Coffee
-  'Espresso': { category: 'Coffee', prepTime: 2, price: 3.00, cost: 0.40, profit: 2.60, popularity: 0.8, usage: { coffeeBeans: 0.018, cups: 1, water: 0.05, napkin: 1 } },
-  'Americano': { category: 'Coffee', prepTime: 3, price: 3.50, cost: 0.45, profit: 3.05, popularity: 0.9, usage: { coffeeBeans: 0.018, cups: 1, water: 0.25, napkin: 1 } },
-  'Latte': { category: 'Coffee', prepTime: 5, price: 4.50, cost: 1.10, profit: 3.40, popularity: 0.95, usage: { coffeeBeans: 0.018, milk: 0.22, cups: 1, sugar: 0.005, napkin: 1 } },
-  'Cappuccino': { category: 'Coffee', prepTime: 5, price: 4.50, cost: 1.10, profit: 3.40, popularity: 0.9, usage: { coffeeBeans: 0.018, milk: 0.22, cups: 1, napkin: 1 } },
-  'Mocha': { category: 'Coffee', prepTime: 6, price: 5.00, cost: 1.40, profit: 3.60, popularity: 0.85, usage: { coffeeBeans: 0.018, milk: 0.18, chocolate: 0.025, cups: 1, sugar: 0.005, napkin: 1 } },
-  'Flat White': { category: 'Coffee', prepTime: 4, price: 4.25, cost: 1.00, profit: 3.25, popularity: 0.85, usage: { coffeeBeans: 0.018, milk: 0.15, cups: 1, napkin: 1 } },
+  'Espresso': { category: 'Coffee', prepTime: 2, price: 6.00, cost: 0.40, profit: 5.60, popularity: 0.8, usage: { coffeeBeans: 0.018, cups: 1, water: 0.05, napkin: 1 } },
+  'Americano': { category: 'Coffee', prepTime: 3, price: 7.00, cost: 0.45, profit: 6.55, popularity: 0.9, usage: { coffeeBeans: 0.018, cups: 1, water: 0.25, napkin: 1 } },
+  'Latte': { category: 'Coffee', prepTime: 5, price: 9.00, cost: 1.10, profit: 7.90, popularity: 0.95, usage: { coffeeBeans: 0.018, milk: 0.22, cups: 1, sugar: 0.005, napkin: 1 } },
+  'Cappuccino': { category: 'Coffee', prepTime: 5, price: 9.00, cost: 1.10, profit: 7.90, popularity: 0.9, usage: { coffeeBeans: 0.018, milk: 0.22, cups: 1, napkin: 1 } },
+  'Mocha': { category: 'Coffee', prepTime: 6, price: 10.00, cost: 1.40, profit: 8.60, popularity: 0.85, usage: { coffeeBeans: 0.018, milk: 0.18, chocolate: 0.025, cups: 1, sugar: 0.005, napkin: 1 } },
+  'Flat White': { category: 'Coffee', prepTime: 4, price: 8.50, cost: 1.00, profit: 7.50, popularity: 0.85, usage: { coffeeBeans: 0.018, milk: 0.15, cups: 1, napkin: 1 } },
   
   // Cold Drinks
-  'Cold Coffee': { category: 'Cold Drinks', prepTime: 3, price: 4.50, cost: 1.20, profit: 3.30, popularity: 0.9, usage: { coffeeBeans: 0.018, milk: 0.20, sugar: 0.01, cups: 1, napkin: 1 } },
-  'Cold Brew': { category: 'Cold Drinks', prepTime: 1, price: 4.25, cost: 0.75, profit: 3.50, popularity: 0.8, usage: { coffeeBeans: 0.022, cups: 1, water: 0.3, napkin: 1 } },
-  'Frappuccino': { category: 'Cold Drinks', prepTime: 5, price: 5.25, cost: 1.60, profit: 3.65, popularity: 0.95, usage: { coffeeBeans: 0.018, milk: 0.25, syrups: 0.015, cups: 1, sugar: 0.01, napkin: 1 } },
+  'Cold Coffee': { category: 'Cold Drinks', prepTime: 3, price: 9.00, cost: 1.20, profit: 7.80, popularity: 0.9, usage: { coffeeBeans: 0.018, milk: 0.20, sugar: 0.01, cups: 1, napkin: 1 } },
+  'Cold Brew': { category: 'Cold Drinks', prepTime: 1, price: 8.50, cost: 0.75, profit: 7.75, popularity: 0.8, usage: { coffeeBeans: 0.022, cups: 1, water: 0.3, napkin: 1 } },
+  'Frappuccino': { category: 'Cold Drinks', prepTime: 5, price: 10.50, cost: 1.60, profit: 8.90, popularity: 0.95, usage: { coffeeBeans: 0.018, milk: 0.25, syrups: 0.015, cups: 1, sugar: 0.01, napkin: 1 } },
   
   // Tea
-  'Masala Tea': { category: 'Tea', prepTime: 3, price: 2.75, cost: 0.60, profit: 2.15, popularity: 0.85, usage: { teaLeaves: 0.01, milk: 0.12, cups: 1, sugar: 0.008, water: 0.12, napkin: 1 } },
-  'Green Tea': { category: 'Tea', prepTime: 2, price: 2.50, cost: 0.40, profit: 2.10, popularity: 0.7, usage: { teaLeaves: 0.008, cups: 1, water: 0.25, napkin: 1 } },
-  'Black Tea': { category: 'Tea', prepTime: 2, price: 2.25, cost: 0.35, profit: 1.90, popularity: 0.65, usage: { teaLeaves: 0.008, cups: 1, sugar: 0.005, water: 0.25, napkin: 1 } },
+  'Masala Tea': { category: 'Tea', prepTime: 3, price: 5.50, cost: 0.60, profit: 4.90, popularity: 0.85, usage: { teaLeaves: 0.01, milk: 0.12, cups: 1, sugar: 0.008, water: 0.12, napkin: 1 } },
+  'Green Tea': { category: 'Tea', prepTime: 2, price: 5.00, cost: 0.40, profit: 4.60, popularity: 0.7, usage: { teaLeaves: 0.008, cups: 1, water: 0.25, napkin: 1 } },
+  'Black Tea': { category: 'Tea', prepTime: 2, price: 4.50, cost: 0.35, profit: 4.15, popularity: 0.65, usage: { teaLeaves: 0.008, cups: 1, sugar: 0.005, water: 0.25, napkin: 1 } },
   
   // Food
-  'Veg Sandwich': { category: 'Food', prepTime: 4, price: 5.50, cost: 1.80, profit: 3.70, popularity: 0.8, usage: { bread: 2, cheese: 1, wrapper: 1, napkin: 1 } },
-  'Paneer Sandwich': { category: 'Food', prepTime: 5, price: 6.25, cost: 2.20, profit: 4.05, popularity: 0.85, usage: { bread: 2, cheese: 1, wrapper: 1, napkin: 1 } },
-  'Brownie': { category: 'Food', prepTime: 1, price: 3.50, cost: 0.90, profit: 2.60, popularity: 0.9, usage: { brownieStock: 1, napkin: 1 } },
-  'Chocolate Muffin': { category: 'Food', prepTime: 1, price: 3.25, cost: 0.80, profit: 2.45, popularity: 0.85, usage: { muffinStock: 1, napkin: 1 } },
-  'Blueberry Muffin': { category: 'Food', prepTime: 1, price: 3.25, cost: 0.80, profit: 2.45, popularity: 0.8, usage: { muffinStock: 1, napkin: 1 } },
-  'Croissant': { category: 'Food', prepTime: 2, price: 3.00, cost: 0.70, profit: 2.30, popularity: 0.9, usage: { bread: 1, napkin: 1 } },
-  'Garlic Bread': { category: 'Food', prepTime: 3, price: 4.00, cost: 1.10, profit: 2.90, popularity: 0.75, usage: { bread: 1, cheese: 1, napkin: 1 } },
-  'Cookie': { category: 'Food', prepTime: 1, price: 2.00, cost: 0.45, profit: 1.55, popularity: 0.95, usage: { muffinStock: 1, napkin: 1 } },
+  'Veg Sandwich': { category: 'Food', prepTime: 4, price: 11.00, cost: 1.80, profit: 9.20, popularity: 0.8, usage: { bread: 2, cheese: 1, wrapper: 1, napkin: 1 } },
+  'Paneer Sandwich': { category: 'Food', prepTime: 5, price: 12.50, cost: 2.20, profit: 10.30, popularity: 0.85, usage: { bread: 2, cheese: 1, wrapper: 1, napkin: 1 } },
+  'Brownie': { category: 'Food', prepTime: 1, price: 7.00, cost: 0.90, profit: 6.10, popularity: 0.9, usage: { brownieStock: 1, napkin: 1 } },
+  'Chocolate Muffin': { category: 'Food', prepTime: 1, price: 6.50, cost: 0.80, profit: 5.70, popularity: 0.85, usage: { muffinStock: 1, napkin: 1 } },
+  'Blueberry Muffin': { category: 'Food', prepTime: 1, price: 6.50, cost: 0.80, profit: 5.70, popularity: 0.8, usage: { muffinStock: 1, napkin: 1 } },
+  'Croissant': { category: 'Food', prepTime: 2, price: 6.00, cost: 0.70, profit: 5.30, popularity: 0.9, usage: { bread: 1, napkin: 1 } },
+  'Garlic Bread': { category: 'Food', prepTime: 3, price: 8.00, cost: 1.10, profit: 6.90, popularity: 0.75, usage: { bread: 1, cheese: 1, napkin: 1 } },
+  'Cookie': { category: 'Food', prepTime: 1, price: 4.00, cost: 0.45, profit: 3.55, popularity: 0.95, usage: { muffinStock: 1, napkin: 1 } },
   
   // Other
-  'Hot Chocolate': { category: 'Other', prepTime: 4, price: 3.75, cost: 1.00, profit: 2.75, popularity: 0.85, usage: { milk: 0.25, chocolate: 0.03, syrups: 0.01, cups: 1, napkin: 1 } },
-  'Water': { category: 'Other', prepTime: 1, price: 1.50, cost: 0.15, profit: 1.35, popularity: 0.9, usage: { cups: 1, water: 0.5, napkin: 1 } },
-  'Juice': { category: 'Other', prepTime: 1, price: 3.50, cost: 1.00, profit: 2.50, popularity: 0.75, usage: { cups: 1, syrups: 0.04, water: 0.3, napkin: 1 } }
+  'Hot Chocolate': { category: 'Other', prepTime: 4, price: 7.50, cost: 1.00, profit: 6.50, popularity: 0.85, usage: { milk: 0.25, chocolate: 0.03, syrups: 0.01, cups: 1, napkin: 1 } },
+  'Water': { category: 'Other', prepTime: 1, price: 3.00, cost: 0.15, profit: 2.85, popularity: 0.9, usage: { cups: 1, water: 0.5, napkin: 1 } },
+  'Juice': { category: 'Other', prepTime: 1, price: 7.00, cost: 1.00, profit: 6.00, popularity: 0.75, usage: { cups: 1, syrups: 0.04, water: 0.3, napkin: 1 } }
 };
 
 // Customer Archetype configurations rebranded for university campus setup
@@ -105,20 +116,20 @@ const DEFAULT_STATE = {
   shop: { name: '', type: 'Standard', city: 'San Francisco', operatingHours: '06:00 AM - 08:00 PM', calendarEvent: 'Normal Week' },
   simulation: { active: false, speed: 1 },
   inventory: {
-    coffeeBeans: { name: 'Espresso Roast (kg)', current: 50.0, max: 100.0, price: 18.00 },
-    milk: { name: 'Dairy & Oat Milk (L)', current: 40.0, max: 80.0, price: 4.50 },
-    cups: { name: 'Bio-Cups (pcs)', current: 300, max: 500, price: 0.25 },
-    syrups: { name: 'Flavor Syrups (L)', current: 15.0, max: 30.0, price: 9.50 },
-    sugar: { name: 'Refined Sugar (kg)', current: 10.0, max: 20.0, price: 2.00 },
-    chocolate: { name: 'Cocoa Powder (kg)', current: 5.0, max: 10.0, price: 12.00 },
-    teaLeaves: { name: 'Organic Tea (kg)', current: 5.0, max: 10.0, price: 15.00 },
-    bread: { name: 'Sandwich Bread (pcs)', current: 100, max: 200, price: 0.40 },
-    cheese: { name: 'Sliced Cheese (pcs)', current: 100, max: 200, price: 0.50 },
-    muffinStock: { name: 'Baked Goods (pcs)', current: 80, max: 150, price: 0.80 },
-    brownieStock: { name: 'Fudge Brownies (pcs)', current: 40, max: 100, price: 1.20 },
-    water: { name: 'Filtered Water (L)', current: 200.0, max: 400.0, price: 0.05 },
-    napkin: { name: 'Recycled Napkins (pcs)', current: 400, max: 800, price: 0.02 },
-    wrapper: { name: 'Bio Wrappers (pcs)', current: 100, max: 200, price: 0.10 }
+    coffeeBeans: { name: 'Espresso Roast (kg)', current: 100.0, max: 100.0, price: 18.00, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 1440, auto: false },
+    milk: { name: 'Dairy & Oat Milk (L)', current: 80.0, max: 80.0, price: 4.50, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 360, auto: false },
+    cups: { name: 'Bio-Cups (pcs)', current: 500, max: 500, price: 0.25, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 2880, auto: false },
+    syrups: { name: 'Flavor Syrups (L)', current: 30.0, max: 30.0, price: 9.50, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 2160, auto: false },
+    sugar: { name: 'Refined Sugar (kg)', current: 20.0, max: 20.0, price: 2.00, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 2880, auto: false },
+    chocolate: { name: 'Cocoa Powder (kg)', current: 10.0, max: 10.0, price: 12.00, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 2160, auto: false },
+    teaLeaves: { name: 'Organic Tea (kg)', current: 10.0, max: 10.0, price: 15.00, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 2160, auto: false },
+    bread: { name: 'Sandwich Bread (pcs)', current: 200, max: 200, price: 0.40, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 480, auto: false },
+    cheese: { name: 'Sliced Cheese (pcs)', current: 200, max: 200, price: 0.50, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 720, auto: false },
+    muffinStock: { name: 'Baked Goods (pcs)', current: 150, max: 150, price: 0.80, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 480, auto: false },
+    brownieStock: { name: 'Fudge Brownies (pcs)', current: 100, max: 100, price: 1.20, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 720, auto: false },
+    water: { name: 'Filtered Water (L)', current: 400.0, max: 400.0, price: 0.05, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 2880, auto: false },
+    napkin: { name: 'Recycled Napkins (pcs)', current: 800, max: 800, price: 0.02, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 2880, auto: false },
+    wrapper: { name: 'Bio Wrappers (pcs)', current: 200, max: 200, price: 0.10, supplierName: 'FreshBean Distribution', supplierTier: 'Standard', supplierRating: 4.6, supplierReliability: 93, supplierLeadTime: 25, supplierCostMultiplier: 1.0, freshness: 100.0, age: 0, expiry: 2880, auto: false }
   },
   staff: {
     list: [
@@ -139,7 +150,25 @@ const DEFAULT_STATE = {
     }
   },
   analytics: { snapshots: [] },
-  notifications: { unreadCount: 0, items: [] },
+  notifications: { 
+    unreadCount: 2, 
+    items: [
+      {
+        id: 'init_1',
+        title: 'System Synced',
+        message: 'BrewMind AI engine connected to digital twin sensor nodes.',
+        type: 'success',
+        time: '07:00 AM'
+      },
+      {
+        id: 'init_2',
+        title: 'Advisory Active',
+        message: 'Ready to receive real-time operational alerts.',
+        type: 'info',
+        time: '07:00 AM'
+      }
+    ] 
+  },
   theme: 'dark-coffee',
   memory: { acceptedRecs: [], rejectedRecs: [], chatHistory: [] },
   copilot: { active: false, soundEnabled: true, voiceEnabled: false },
@@ -185,18 +214,44 @@ window.BrewMind.state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
 // Load persisted simulation state from localStorage if available
 try {
+  const SCHEMA_VERSION = 'v1.3';
   const savedState = localStorage.getItem('brewmind_sim_state');
-  if (savedState) {
+  const savedVersion = localStorage.getItem('brewmind_sim_version');
+  
+  if (savedVersion !== SCHEMA_VERSION) {
+    console.warn("Stale state version detected. Resetting to defaults.");
+    localStorage.removeItem('brewmind_sim_state');
+    localStorage.setItem('brewmind_sim_version', SCHEMA_VERSION);
+  } else if (savedState) {
     const parsed = JSON.parse(savedState);
     if (parsed.clock) window.BrewMind.state.clock = parsed.clock;
     if (parsed.revenue !== undefined) window.BrewMind.state.revenue = parsed.revenue;
     if (parsed.orders) window.BrewMind.state.orders = parsed.orders;
     if (parsed.inventory) {
+      let depletedCount = 0;
+      let totalItems = 0;
       Object.keys(parsed.inventory).forEach(key => {
         if (window.BrewMind.state.inventory[key]) {
-          window.BrewMind.state.inventory[key].current = parsed.inventory[key].current;
+          const savedItem = parsed.inventory[key];
+          window.BrewMind.state.inventory[key].current = savedItem.current;
+          if (savedItem.freshness !== undefined) {
+            window.BrewMind.state.inventory[key].freshness = savedItem.freshness;
+          }
+          if (savedItem.age !== undefined) {
+            window.BrewMind.state.inventory[key].age = savedItem.age;
+          }
+          totalItems++;
+          if (savedItem.current <= 0) depletedCount++;
         }
       });
+      // Safety: if most inventory is depleted, reset to defaults
+      if (totalItems > 0 && depletedCount >= totalItems * 0.6) {
+        console.warn('Most inventory was depleted from previous session — resetting to defaults.');
+        const freshDefaults = JSON.parse(JSON.stringify(DEFAULT_STATE.inventory));
+        window.BrewMind.state.inventory = freshDefaults;
+        window.BrewMind.state.cafeReputation = 85;
+        window.BrewMind.state.customerSatisfaction = 90;
+      }
     }
     if (parsed.cafeReputation !== undefined) window.BrewMind.state.cafeReputation = parsed.cafeReputation;
     if (parsed.machineHealth !== undefined) window.BrewMind.state.machineHealth = parsed.machineHealth;
@@ -206,6 +261,7 @@ try {
   }
 } catch (e) {
   console.warn("Could not load persisted simulation state:", e);
+  localStorage.removeItem('brewmind_sim_state');
 }
 
 window.BrewMind.getState = () => {
@@ -255,6 +311,10 @@ class SimulationEngine {
     this.hourlyGrossSales = 0;
   }
 
+  get isRunning() {
+    return !!this.timer;
+  }
+
   start() {
     if (this.timer) clearInterval(this.timer);
     
@@ -264,6 +324,9 @@ class SimulationEngine {
     const interval = this.getTickInterval(speed);
     
     console.log(`Simulation Engine ONLINE. Speed: x${speed} (tick every ${interval}ms)`);
+    
+    // Fire first tick immediately for instant feedback
+    this.tick();
     
     this.timer = setInterval(() => {
       this.tick();
@@ -402,7 +465,7 @@ class SimulationEngine {
    * Central clock increment, customer spawner, and staff task worker tick.
    */
   tick() {
-    const state = window.BrewMind.getState();
+    const state = window.BrewMind.state;
     
     // 1. Advance Clock smoothly by 1 minute
     let min = state.clock.minutes + 1;
@@ -412,6 +475,213 @@ class SimulationEngine {
       hr = (hr + 1) % 24;
       this.writeJournalEntry(hr, state);
     }
+
+    // Auto-skip night shift (20:00 to 07:00 AM) to keep simulator active
+    if (hr >= 20 || hr < 7) {
+      hr = 7;
+      min = 0;
+      
+      // Reset daily indicators for a new day
+      state.customers.list = [];
+      state.revenue = 0;
+      state.orders.completed = 0;
+      state.orders.failed = 0;
+      state.orders.total = 0;
+      state.orders.sales = {};
+      
+      this.addAlert('New Day Started', 'Skipping night closed hours. Good morning! A new business day has begun.', 'success');
+    }
+
+    // 1b. Process supply chain deliveries (Procurement Command Center)
+    state.deliveries = state.deliveries || [];
+    state.purchaseHistory = state.purchaseHistory || [];
+    state.autoRestockSettings = state.autoRestockSettings || {};
+
+    // Decay freshness and age tick
+    Object.keys(state.inventory).forEach(key => {
+      const item = state.inventory[key];
+      item.age = (item.age || 0) + 1;
+      
+      // Calculate decay rate based on ingredient type
+      let decay = 0.05; // base decay per minute
+      if (key.toLowerCase().includes('milk')) {
+        decay = 0.45; // Milk loses freshness quickly
+      } else if (key.toLowerCase().includes('bread') || key.toLowerCase().includes('muffin') || key.toLowerCase().includes('brownie') || key.toLowerCase().includes('cheese')) {
+        decay = 0.25; // Pastries and dairy cheese lose moderately
+      } else if (key.toLowerCase().includes('beans')) {
+        decay = 0.08; // Beans lose aroma gradually
+      } else if (key.toLowerCase().includes('syrups') || key.toLowerCase().includes('sugar') || key.toLowerCase().includes('chocolate') || key.toLowerCase().includes('tea')) {
+        decay = 0.03; // Syrups/Dry lose very slowly
+      } else {
+        decay = 0.005; // Wrappers/Napkins/Water barely decay
+      }
+
+      item.freshness = Math.max(0, parseFloat((item.freshness - decay).toFixed(2)));
+
+      // JIT Auto-Discard: Automatically discard expired perishable stock to maintain quality (Feature 6.1)
+      if (item.freshness < 15.0 && item.current > 0.1) {
+        const nameLower = key.toLowerCase();
+        if (nameLower.includes('milk') || nameLower.includes('bread') || nameLower.includes('muffin') || nameLower.includes('brownie') || nameLower.includes('cheese') || nameLower.includes('beans')) {
+          const discardedAmount = item.current;
+          item.current = 0;
+          item.freshness = 100.0; // Reset freshness of empty slot
+          item.age = 0;
+          
+          const timeStr = formatSimulationTime(state.clock.hours, state.clock.minutes);
+          state.supplyChainTimeline = state.supplyChainTimeline || [];
+          state.supplyChainTimeline.unshift({ 
+            time: timeStr, 
+            text: `Discarded ${discardedAmount.toFixed(1)} ${nameLower.includes('pcs') ? 'pcs' : (nameLower.includes('kg') ? 'kg' : 'L')} of expired/stale ${item.name.split(' (')[0]}` 
+          });
+
+          // Register a warning alert for the manager
+          const alertTitle = 'Expired Stock Discarded';
+          const alertMsg = `${item.name.split(' (')[0]} has expired (freshness < 15%) and was discarded for safety. Replenishment triggered.`;
+          state.alerts = state.alerts || [];
+          const exists = state.alerts.some(a => a.title === alertTitle && a.message.includes(item.name.split(' (')[0]));
+          if (!exists) {
+            state.alerts.unshift({
+              id: 'alert_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+              title: alertTitle,
+              message: alertMsg,
+              type: 'warning',
+              time: timeStr
+            });
+            if (state.alerts.length > 30) state.alerts.pop();
+          }
+        }
+      }
+    });
+
+    // Update active deliveries progress & status
+    state.supplyChainTimeline = state.supplyChainTimeline || [];
+    state.deliveries.forEach(del => {
+      const oldStatus = del.status;
+      del.eta -= 1;
+      del.progress = Math.round(((del.totalEta - del.eta) / del.totalEta) * 100);
+      
+      if (del.eta <= 0) {
+        del.status = 'Arrived';
+      } else if (del.eta <= del.totalEta / 2) {
+        del.status = 'On Route';
+      } else {
+        del.status = 'Preparing';
+      }
+
+      if (oldStatus !== del.status) {
+        const timeStr = formatSimulationTime(state.clock.hours, state.clock.minutes);
+        const itemName = state.inventory[del.itemKey] ? state.inventory[del.itemKey].name.split(' (')[0] : del.itemKey;
+        if (del.status === 'On Route') {
+          state.supplyChainTimeline.unshift({ time: timeStr, text: `Shipment of ${itemName} dispatched via ${del.supplier}` });
+        } else if (del.status === 'Arrived') {
+          state.supplyChainTimeline.unshift({ time: timeStr, text: `Truck arrived: ${itemName} from ${del.supplier}` });
+        }
+      }
+    });
+
+    // Finalize completed deliveries
+    const completed = state.deliveries.filter(del => del.eta <= 0);
+    completed.forEach(del => {
+      const item = state.inventory[del.itemKey];
+      if (item) {
+        // Blend new item freshness with old item freshness (weighted average)
+        const oldWeight = item.current;
+        const newWeight = del.amount;
+        const total = oldWeight + newWeight;
+        
+        if (total > 0) {
+          item.freshness = parseFloat(((item.freshness * oldWeight + 100.0 * newWeight) / total).toFixed(1));
+          item.age = Math.round((item.age * oldWeight) / total); // weighted age
+        } else {
+          item.freshness = 100.0;
+          item.age = 0;
+        }
+
+        item.current = Math.min(item.max, item.current + del.amount);
+        state.warnings.lowStock[del.itemKey] = false;
+
+        const timeStr = formatSimulationTime(state.clock.hours, state.clock.minutes);
+        state.purchaseHistory.unshift({
+          id: '_' + Math.random().toString(36).substr(2, 9),
+          time: timeStr,
+          supplier: del.supplier,
+          item: item.name.split(' (')[0],
+          amount: `+${del.amount.toFixed(1)} ${item.name.includes('pcs') ? 'pcs' : (item.name.includes('kg') ? 'kg' : 'L')}`,
+          cost: del.cost,
+          status: 'Completed'
+        });
+
+        // Log final receipt
+        state.supplyChainTimeline.unshift({ time: timeStr, text: `Inventory updated: ${item.name.split(' (')[0]} filled to ${Math.round((item.current/item.max)*100)}%` });
+
+        window.dispatchEvent(new CustomEvent('brewmind:toast', {
+          detail: {
+            title: 'Delivery Arrived',
+            message: `${del.supplier} delivered ${del.amount.toFixed(1)} of ${item.name.split(' (')[0]}`,
+            type: 'success'
+          }
+        }));
+      }
+    });
+    state.deliveries = state.deliveries.filter(del => del.eta > 0);
+
+    // Auto-restock evaluation
+    Object.keys(state.inventory).forEach(key => {
+      const item = state.inventory[key];
+      const percent = (item.current / item.max) * 100;
+      
+      // Sync auto property with state.autoRestockSettings
+      if (state.autoRestockSettings[key] === undefined) {
+        state.autoRestockSettings[key] = item.auto || false;
+      }
+      
+      if (state.autoRestockSettings[key] && percent < 20) {
+        const isPending = state.deliveries.some(d => d.itemKey === key);
+        if (!isPending) {
+          const supplierName = item.supplierName || 'FreshBean Distribution';
+          const costMult = item.supplierCostMultiplier || 1.0;
+          const leadTime = item.supplierLeadTime || 25;
+
+          // Smart JIT target limit for freshness replenishment
+          const targetLimit = getSmartTargetLimit(key, item.max);
+          const restockAmt = Math.max(0, parseFloat((targetLimit - item.current).toFixed(1)));
+          
+          if (restockAmt <= 0) return;
+          
+          const cost = parseFloat((restockAmt * item.price * costMult).toFixed(2));
+          
+          if (state.revenue >= cost) {
+            state.revenue = parseFloat((state.revenue - cost).toFixed(2));
+            const timeStr = formatSimulationTime(state.clock.hours, state.clock.minutes);
+            
+            state.deliveries.push({
+              id: 'del_' + Math.random().toString(36).substr(2, 9),
+              supplier: supplierName,
+              itemKey: key,
+              amount: restockAmt,
+              cost: cost,
+              eta: leadTime,
+              totalEta: leadTime,
+              status: 'Preparing',
+              progress: 0
+            });
+
+            // Log purchase order send and acceptance
+            state.supplyChainTimeline.unshift({ time: timeStr, text: `Auto Restock executed for ${item.name.split(' (')[0]}` });
+            state.supplyChainTimeline.unshift({ time: timeStr, text: `Purchase order sent to ${supplierName} for ${item.name.split(' (')[0]}` });
+            state.supplyChainTimeline.unshift({ time: timeStr, text: `Supplier accepted order #${Math.floor(1000 + Math.random() * 9000)}` });
+            
+            window.dispatchEvent(new CustomEvent('brewmind:toast', {
+              detail: {
+                title: 'Auto-Restock Ordered',
+                message: `Auto-ordered ${item.name.split(' (')[0]} via ${supplierName}. Cost: $${cost.toFixed(2)}`,
+                type: 'info'
+              }
+            }));
+          }
+        }
+      }
+    });
 
     // 2. Schedule-based Rush Hour check
     const decimalTime = hr + min / 60;
@@ -446,28 +716,34 @@ class SimulationEngine {
       }
     }
 
-    // 3. Customer Spawn Engine
+    // 3. Customer Spawn Engine (multi-spawn per tick)
     const isClosed = decimalTime < 6.0 || decimalTime >= 20.0;
-    let spawnChance = 0.12; 
-    if (isRushHour && activeRush) spawnChance = activeRush.spawnChance;
-    if (state.weather.condition === 'Rainy') spawnChance -= 0.15;
+    let spawnChance = 0.45; 
+    if (isRushHour && activeRush) spawnChance = Math.max(spawnChance, activeRush.spawnChance * 1.5);
+    if (state.weather.condition === 'Rainy') spawnChance -= 0.08;
     spawnChance *= (state.cafeReputation / 100);
 
     const queueLength = state.customers.list.filter(c => c.status === 'Queue').length;
-    if (queueLength > 8) spawnChance -= 0.20;
+    if (queueLength > 14) spawnChance -= 0.15;
 
-    spawnChance = Math.max(0.02, Math.min(0.95, spawnChance));
+    spawnChance = Math.max(0.15, Math.min(0.98, spawnChance));
     if (isClosed) spawnChance = 0.0;
 
-    if (Math.random() < spawnChance && state.customers.list.length < 18) {
-      const spawnedCustomer = this.generateCustomer(hr, state.weather.condition);
-      state.customers.list.push(spawnedCustomer);
-      state.orders.total += 1;
-      
-      window.BrewMind.dispatch('brewmind:customer', spawnedCustomer);
-      
-      if (spawnedCustomer.isVIP) {
-        this.addAlert('Faculty Guest Arrival', `${spawnedCustomer.name} has joined the queue.`, 'info');
+    // Determine how many customers to spawn this tick
+    const maxSpawnPerTick = isRushHour ? 3 : 2;
+    for (let sp = 0; sp < maxSpawnPerTick; sp++) {
+      if (Math.random() < spawnChance && state.customers.list.length < 30) {
+        const spawnedCustomer = this.generateCustomer(hr, state.weather.condition);
+        state.customers.list.push(spawnedCustomer);
+        state.orders.total += 1;
+        
+        window.BrewMind.dispatch('brewmind:customer', spawnedCustomer);
+        
+        if (spawnedCustomer.isVIP) {
+          this.addAlert('Faculty Guest Arrival', `${spawnedCustomer.name} has joined the queue.`, 'info');
+        }
+        // Reduce chance for each additional spawn this tick
+        spawnChance *= 0.6;
       }
     }
 
@@ -524,6 +800,7 @@ class SimulationEngine {
           const customer = queue.shift();
           const drink = DRINK_MENU[customer.drinkType];
           
+          const evalResult = this.evaluateDrinkIngredients(state, customer.drinkType);
           const hasIngredients = this.checkAndConsumeInventory(state.inventory, drink.usage, state.warnings.lowStock);
           
           if (hasIngredients) {
@@ -533,7 +810,11 @@ class SimulationEngine {
               drinkType: customer.drinkType,
               prepTimeRemaining: Math.ceil(drink.prepTime / barista.efficiency),
               totalPrepTime: Math.ceil(drink.prepTime / barista.efficiency),
-              value: customer.orderValue
+              value: customer.orderValue,
+              quality: evalResult.quality,
+              freshness: evalResult.freshness,
+              expired: evalResult.expired,
+              expiredName: evalResult.expiredName
             };
             
             customer.status = 'Preparing';
@@ -571,17 +852,58 @@ class SimulationEngine {
           const customer = activeCustomers.find(c => c.id === order.customerId);
           if (customer) {
             customer.status = 'Completed';
-            customer.diningTimeRemaining = Math.floor(Math.random() * 8) + 4;
+            customer.diningTimeRemaining = Math.floor(Math.random() * 10) + 8;
             
             let tipValue = 0;
-            if (barista.quality > 1.1) {
-              tipValue = order.value * 0.15;
+            const qualityTier = order.quality || 'Standard';
+            const freshness = order.freshness !== undefined ? order.freshness : 100.0;
+            const expired = order.expired || false;
+            const expiredName = order.expiredName || '';
+
+            if (expired) {
+              // Expired ingredient penalty
+              tipValue = 0;
+              customer.mood = 'Angry';
+              this.addAlert('Quality Outrage', `Customer was served expired/stale ${expiredName} in their ${order.drinkType}!`, 'danger');
+              state.cafeReputation = Math.max(0, state.cafeReputation - 3);
+              state.customerSatisfaction = Math.max(0, state.customerSatisfaction - 15);
+            } else if (qualityTier === 'Premium') {
+              // Premium supplier quality bonus
+              tipValue = order.value * (0.15 + Math.random() * 0.15); // Guaranteed +15% tips
               customer.mood = 'Excellent';
-              this.addAlert('Excellent Feedback', `Faculty Guest served premium ${order.drinkType} crafted by ${barista.name}!`, 'success');
-            } else if (barista.quality < 0.8 && Math.random() < 0.25) {
-              customer.mood = 'Bored';
-              this.addAlert('Customer Complaint', `Student noted slight quality discrepancy on ${barista.name}'s craft.`, 'warning');
-              state.cafeReputation = Math.max(0, state.cafeReputation - 2);
+              state.customerSatisfaction = Math.min(100, state.customerSatisfaction + 2.5);
+              state.cafeReputation = Math.min(100, state.cafeReputation + 0.4);
+              if (Math.random() < 0.15) {
+                this.addAlert('Premium Grade Praise', `Student praised the outstanding taste of premium ingredients in their ${order.drinkType}!`, 'success');
+              }
+            } else if (qualityTier === 'Budget') {
+              // Budget supplier penalty
+              tipValue = 0; // No tips
+              if (Math.random() < 0.15) {
+                customer.mood = 'Bored';
+                this.addAlert('Quality Issue', `Student complained about cheap ingredient flavor in their ${order.drinkType}.`, 'warning');
+                state.cafeReputation = Math.max(0, state.cafeReputation - 1.5);
+                state.customerSatisfaction = Math.max(0, state.customerSatisfaction - 5);
+              }
+            } else {
+              // Standard behavior
+              if (barista.quality > 1.1) {
+                tipValue = order.value * 0.15;
+                customer.mood = 'Excellent';
+                this.addAlert('Excellent Feedback', `Faculty Guest served premium ${order.drinkType} crafted by ${barista.name}!`, 'success');
+              } else if (barista.quality < 0.8 && Math.random() < 0.25) {
+                customer.mood = 'Bored';
+                this.addAlert('Customer Complaint', `Student noted slight quality discrepancy on ${barista.name}'s craft.`, 'warning');
+                state.cafeReputation = Math.max(0, state.cafeReputation - 2);
+              }
+            }
+
+            // General freshness penalty (stale but not expired)
+            if (freshness < 60 && !expired) {
+              state.customerSatisfaction = Math.max(0, state.customerSatisfaction - 2.5);
+              if (Math.random() < 0.1) {
+                this.addAlert('Freshness Issue', `Student complained that their ${order.drinkType} tasted stale.`, 'warning');
+              }
             }
             
             const finalCash = parseFloat((order.value + tipValue).toFixed(2));
@@ -754,7 +1076,7 @@ class SimulationEngine {
     // Evaluate BrewMind Brain Observations
     state.brainInsights = generateObservations(state);
 
-    window.BrewMind.setState(state);
+    window.BrewMind.dispatch('brewmind:statechange', state);
 
     // Save state fields to LocalStorage
     try {
@@ -769,6 +1091,7 @@ class SimulationEngine {
         journal: state.journal,
         activeGoal: state.activeGoal
       }));
+      localStorage.setItem('brewmind_sim_version', 'v1.3');
     } catch (e) {
       console.warn("Error saving simulation state to LocalStorage:", e);
     }
@@ -899,11 +1222,62 @@ class SimulationEngine {
     return true;
   }
 
+  evaluateDrinkIngredients(state, drinkType) {
+    const drink = DRINK_MENU[drinkType];
+    if (!drink || !drink.usage) return { quality: 'Standard', freshness: 100.0, expired: false, expiredName: '' };
+    
+    let totalFreshness = 0;
+    let ingredientCount = 0;
+    let hasBudget = false;
+    let hasPremium = false;
+    let premiumCount = 0;
+    let keyCount = 0;
+    let expired = false;
+    let expiredName = '';
+
+    for (const key in drink.usage) {
+      const item = state.inventory[key];
+      if (item) {
+        totalFreshness += (item.freshness !== undefined ? item.freshness : 100.0);
+        ingredientCount++;
+        
+        if (item.supplierTier === 'Budget') {
+          hasBudget = true;
+        } else if (item.supplierTier === 'Premium') {
+          premiumCount++;
+        }
+        keyCount++;
+
+        // Expiry check (< 15% freshness is expired)
+        if (item.freshness !== undefined && item.freshness < 15.0) {
+          expired = true;
+          expiredName = item.name.split(' (')[0];
+        }
+      }
+    }
+
+    const avgFreshness = ingredientCount > 0 ? (totalFreshness / ingredientCount) : 100.0;
+    
+    let finalTier = 'Standard';
+    if (hasBudget) {
+      finalTier = 'Budget';
+    } else if (premiumCount === keyCount && keyCount > 0) {
+      finalTier = 'Premium';
+    }
+
+    return {
+      quality: finalTier,
+      freshness: avgFreshness,
+      expired: expired,
+      expiredName: expiredName
+    };
+  }
+
   /**
    * Adds operational alert logs and dispatches system notification badges.
    */
   addAlert(title, message, type) {
-    const state = window.BrewMind.getState();
+    const state = window.BrewMind.state;
     const newAlert = {
       id: 'alert_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       title,
@@ -915,7 +1289,6 @@ class SimulationEngine {
 
     state.notifications.items.unshift(newAlert);
     state.notifications.unreadCount += 1;
-    window.BrewMind.setState(state);
     
     window.BrewMind.dispatch('brewmind:alert', newAlert);
     window.BrewMind.dispatch('brewmind:toast', {

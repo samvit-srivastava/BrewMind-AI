@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=1.24">
   
   <!-- Global Error Logger for Hackathon Debugging -->
   <script>
@@ -191,7 +191,7 @@
             <div class="steam-line"></div>
           </div>
           <i data-lucide="cpu" class="brand-icon"></i>
-          <span class="brand-text">BrewMind AI</span>
+          <span class="brand-text" style="color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; letter-spacing: -0.03em; display: inline-flex !important; align-items: center; visibility: visible !important; opacity: 1 !important;">BrewMind<span style="color: var(--color-primary); margin-left: 0.3rem;">AI</span></span>
         </div>
         <nav class="sidebar-nav">
           <div class="nav-item active" data-view="dashboard" id="nav-dashboard">
@@ -238,42 +238,51 @@
       <!-- Top Header -->
       <header class="header">
         <div class="header-left">
-          <h2 class="header-greeting" id="header-welcome">Welcome back, Alex</h2>
-          <span class="header-subtext" id="header-date">Tuesday, June 30, 2026</span>
+          <h2 class="header-greeting" id="header-welcome">Good Morning, samvit 👋</h2>
+          <span class="header-subtext" id="header-date">Tuesday, June 30, 2026 • 7:00 AM</span>
         </div>
 
         <div class="header-center">
-          <div class="header-widget" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.6rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 20px;">
-            <div style="display: flex; align-items: center; gap: 0.4rem; border-right: 1px solid var(--glass-border); padding-right: 0.5rem; margin-right: 0.25rem;">
-              <button class="icon-btn-small" id="sim-btn-play" title="Resume Simulation" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; display: flex; align-items: center;"><i data-lucide="play" style="width: 13px; height: 13px;"></i></button>
-              <button class="icon-btn-small" id="sim-btn-pause" title="Pause Simulation" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; display: flex; align-items: center;"><i data-lucide="pause" style="width: 13px; height: 13px;"></i></button>
-              <select id="sim-speed-select" style="background: none; border: none; color: var(--color-primary); font-size: 0.72rem; font-weight: 600; cursor: pointer; outline: none; padding: 0;">
-                <option value="1">1x</option>
-                <option value="2">2x</option>
-                <option value="5">5x</option>
-                <option value="10">10x</option>
-              </select>
+          <!-- Premium Simulation Controls Capsule (Feature 4) -->
+          <div class="sim-control-capsule">
+            <span class="sim-status-badge" id="sim-status-badge">
+              <span class="sim-status-dot"></span>
+              <span id="sim-status-label">Simulation Running</span>
+            </span>
+            <div class="sim-control-divider"></div>
+            <!-- Play/Pause Toggle -->
+            <button class="sim-control-btn" id="sim-btn-play-toggle" title="Pause Simulation">
+              <i data-lucide="pause" id="sim-play-icon" style="width: 14px; height: 14px;"></i>
+            </button>
+            <div class="sim-control-divider"></div>
+            <!-- Speed Deck -->
+            <div class="sim-speed-deck">
+              <button class="sim-speed-btn" data-speed="1" id="speed-btn-1">x1</button>
+              <button class="sim-speed-btn" data-speed="2" id="speed-btn-2">x2</button>
+              <button class="sim-speed-btn" data-speed="5" id="speed-btn-5">x5</button>
+              <button class="sim-speed-btn" data-speed="10" id="speed-btn-10">x10</button>
             </div>
-            <i data-lucide="clock" style="width: 14px; height: 14px; color: var(--color-primary);"></i>
-            <span id="widget-clock" style="font-size: 0.78rem; font-weight: 600;">07:00 AM</span>
           </div>
+
+          <!-- Weather Stack Widget -->
           <div class="header-widget" title="Current Weather Conditions">
-            <i data-lucide="sun" id="widget-weather-icon"></i>
-            <span id="widget-weather-text">Sunny, 24°C</span>
+            <i data-lucide="cloud" id="widget-weather-icon"></i>
+            <div class="weather-info-stack">
+              <span id="widget-weather-main">Sunny, 24°C</span>
+              <span id="widget-weather-feels">Feels like 26°C</span>
+            </div>
+          </div>
+
+          <!-- System Stable Status Badge -->
+          <div class="header-status-badge" id="system-status-badge">
+            <span class="status-badge-dot" id="system-status-dot"></span>
+            <span id="system-status-label">System Stable</span>
           </div>
         </div>
 
         <div class="header-right">
-          <!-- Active Store Health -->
-          <div class="header-widget" title="Store Operational Status">
-            <div class="health-indicator">
-              <span class="health-dot pulse" id="health-dot"></span>
-              <span id="health-label">System Stable</span>
-            </div>
-          </div>
-
           <!-- Alert Notifications Center -->
-          <button class="icon-btn" id="btn-notifications" title="System Notifications">
+          <button class="icon-btn" id="btn-notifications" title="System Notifications" style="position: relative;">
             <i data-lucide="bell"></i>
             <span class="btn-badge" id="notifications-count" style="display: none;">0</span>
           </button>
@@ -291,187 +300,393 @@
         <!-- View 1: Dashboard -->
         <section id="view-dashboard" class="view-section active">
           
-          <!-- Campus Command Center -->
-          <div class="panel-container" style="margin-bottom: 1.25rem; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(30, 24, 20, 0.45), rgba(15, 12, 10, 0.45)); border-radius: 16px;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-              <div style="background: var(--color-primary-glow); padding: 0.35rem; border-radius: 8px; color: var(--color-primary);"><i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i></div>
-              <div>
-                <h4 style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; margin: 0;">Campus Command Center</h4>
-                <p style="font-size: 0.7rem; color: var(--text-muted); margin: 0;">Real-time overview & predictive diagnostics of the campus café network.</p>
-              </div>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.25rem;">
-              <div>
-                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Campus Activity</span>
-                <div style="font-size: 1rem; font-weight: 700; color: var(--color-primary); margin-top: 0.15rem; display: flex; align-items: center; gap: 0.4rem;">
-                  <span id="cmd-activity">Normal</span>
-                  <span class="badge" id="cmd-activity-badge" style="font-size: 0.6rem; background: rgba(212, 163, 115, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); padding: 0.05rem 0.25rem; border-radius: 4px;">LIVE</span>
+          <!-- Campus Command Center (Premium Hero Card) -->
+          <div class="panel-container hero-command-center" style="margin-bottom: 1.5rem; padding: 1.5rem 2rem; background: linear-gradient(135deg, rgba(35, 27, 24, 0.75) 0%, rgba(18, 14, 12, 0.85) 100%); border: 1px solid rgba(212, 163, 115, 0.25); border-radius: 24px; box-shadow: 0 15px 45px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(255,255,255,0.05); position: relative; overflow: hidden;">
+            <!-- Ambient glowing backgrounds -->
+            <div style="position: absolute; top: -50px; right: -50px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(212, 163, 115, 0.08) 0%, transparent 70%); filter: blur(30px); pointer-events: none;"></div>
+            <div style="position: absolute; bottom: -50px; left: -50px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(16, 185, 129, 0.04) 0%, transparent 70%); filter: blur(30px); pointer-events: none;"></div>
+            
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="background: linear-gradient(135deg, var(--color-primary), #8C5A3C); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #000; box-shadow: 0 4px 15px rgba(212, 163, 115, 0.2);"><i data-lucide="shield" style="width: 20px; height: 20px;"></i></div>
+                <div>
+                  <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: #FFF;">Campus Command Center</h4>
+                  <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0;">Real-time predictive telemetry & network diagnostics.</p>
                 </div>
               </div>
               <div>
-                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Students on Campus</span>
-                <div style="font-size: 1rem; font-weight: 700; color: #FFF; margin-top: 0.15rem;" id="cmd-population">15,000</div>
+                <span class="pulse-live-badge" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #10B981; font-weight: 700; font-size: 0.68rem; padding: 0.3rem 0.75rem; border-radius: 50px; letter-spacing: 0.5px;">
+                  <span class="live-dot-pulse"></span>
+                  SYSTEM STABLE
+                </span>
               </div>
-              <div>
-                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Active Customers</span>
-                <div style="font-size: 1rem; font-weight: 700; color: #FFF; margin-top: 0.15rem;" id="cmd-customers">0</div>
+            </div>
+            
+            <!-- Grid -->
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.25rem;">
+              
+              <!-- 1. Campus Activity -->
+              <div class="command-stat-card" style="background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.03); border-radius: 16px; padding: 1rem; position: relative;">
+                <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Campus Activity</div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span id="cmd-activity" style="font-size: 1.15rem; font-weight: 800; color: var(--color-primary);">Normal</span>
+                  <!-- Soft green pulse behind LIVE -->
+                  <span class="live-pulse-container" style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+                    <span class="pulse-ring"></span>
+                    <span class="badge" id="cmd-activity-badge" style="font-size: 0.55rem; background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; color: #10B981; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: 700;">LIVE</span>
+                  </span>
+                </div>
+                <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; color: var(--text-muted);">
+                  <i data-lucide="activity" style="width: 12px; height: 12px; color: var(--color-primary);"></i>
+                  <span>Monitoring activity</span>
+                </div>
               </div>
-              <div>
-                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Expected Next Rush</span>
-                <div style="font-size: 1rem; font-weight: 700; color: var(--color-warning); margin-top: 0.15rem;" id="cmd-next-rush">Class Break at 10:30</div>
+              
+              <!-- 2. Students on Campus -->
+              <div class="command-stat-card" style="background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.03); border-radius: 16px; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">On Campus</div>
+                  <div id="cmd-population" style="font-size: 1.2rem; font-weight: 800; color: #FFF; font-family: var(--font-display);">15,000</div>
+                  <div style="margin-top: 0.4rem; font-size: 0.65rem; color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                    <i data-lucide="arrow-up" style="width:10px; height:10px;"></i>
+                    <span>+1.2% trend</span>
+                  </div>
+                </div>
+                <!-- Progress Ring -->
+                <div style="position: relative; width: 44px; height: 44px; flex-shrink: 0;">
+                  <svg width="44" height="44" viewBox="0 0 44 44">
+                    <circle cx="22" cy="22" r="18" stroke="rgba(255,255,255,0.03)" stroke-width="3" fill="transparent"></circle>
+                    <circle id="cmd-population-ring" cx="22" cy="22" r="18" stroke="var(--color-primary)" stroke-width="3" fill="transparent" stroke-dasharray="113" stroke-dashoffset="34" style="transform: rotate(-90deg); transform-origin: 50% 50%; filter: drop-shadow(0 0 2px rgba(212,163,115,0.2)); transition: stroke-dashoffset 0.6s ease;"></circle>
+                  </svg>
+                  <div id="cmd-population-pct" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; color: var(--text-secondary); font-weight: 700;">70%</div>
+                </div>
               </div>
-              <div>
-                <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Predicted Closing Revenue</span>
-                <div style="font-size: 1rem; font-weight: 700; color: var(--color-success); margin-top: 0.15rem;" id="cmd-pred-revenue">$0.00</div>
+
+              <!-- 3. Active Customers -->
+              <div class="command-stat-card" style="background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.03); border-radius: 16px; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Active Customers</div>
+                  <div id="cmd-customers" style="font-size: 1.2rem; font-weight: 800; color: #FFF; font-family: var(--font-display);">0</div>
+                  <div style="margin-top: 0.4rem; font-size: 0.65rem; color: var(--text-muted); display: flex; align-items: center; gap: 2px;">
+                    <i data-lucide="users" style="width:10px; height:10px;"></i>
+                    <span>In-shop</span>
+                  </div>
+                </div>
+                <!-- Mini gauge -->
+                <div style="position: relative; width: 44px; height: 44px; flex-shrink: 0;">
+                  <svg width="44" height="44" viewBox="0 0 44 44">
+                    <circle cx="22" cy="22" r="18" stroke="rgba(255,255,255,0.03)" stroke-width="3" fill="transparent"></circle>
+                    <circle cx="22" cy="22" r="18" stroke="#3B82F6" stroke-width="3" fill="transparent" stroke-dasharray="113" stroke-dashoffset="113" id="cmd-customers-ring" style="transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.6s ease;"></circle>
+                  </svg>
+                  <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; color: var(--text-secondary); font-weight: 700;" id="cmd-customers-pct">0%</div>
+                </div>
               </div>
+
+              <!-- 4. Expected Next Rush -->
+              <div class="command-stat-card" style="background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.03); border-radius: 16px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.65rem;">
+                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.15); color: var(--color-warning); padding: 0.45rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-top: 0.1rem; flex-shrink: 0;"><i data-lucide="clock" style="width: 14px; height: 14px;"></i></div>
+                <div>
+                  <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Expected Next Rush</div>
+                  <div id="cmd-next-rush" style="font-size: 0.82rem; font-weight: 800; color: var(--color-warning); line-height: 1.25;">Class Break at 10:30</div>
+                </div>
+              </div>
+
+              <!-- 5. Predicted Closing Revenue -->
+              <div class="command-stat-card" style="background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.03); border-radius: 16px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.65rem;">
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); color: var(--color-success); padding: 0.45rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-top: 0.1rem; flex-shrink: 0;"><i data-lucide="trending-up" style="width: 14px; height: 14px;"></i></div>
+                <div>
+                  <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Projected Closing</div>
+                  <div id="cmd-pred-revenue" style="font-size: 1.1rem; font-weight: 800; color: var(--color-success); font-family: var(--font-display);">$0.00</div>
+                </div>
+              </div>
+
             </div>
           </div>
 
           <!-- Main KPI Metrics - Expanded 10 Deck -->
-          <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
-            
-            <!-- 1. Revenue -->
-            <div class="card-kpi" id="kpi-revenue">
-              <div class="kpi-header">
-                <span class="kpi-title">Daily Revenue</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="dollar-sign"></i></div>
+          <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                 <!-- 1. Revenue -->
+            <div class="card-kpi" id="kpi-revenue" style="border: 1px solid rgba(212, 163, 115, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(32, 25, 21, 0.6) 0%, rgba(18, 14, 12, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="dollar-sign" style="width: 14px; height: 14px; color: #D4A373;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Daily Revenue</span>
               </div>
-              <div class="kpi-value" id="val-revenue">$0.00</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend up" id="trend-revenue" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="arrow-up-right" style="width:12px; height:12px;"></i> +0.0%</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-revenue" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-revenue" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">$0.00</span>
+                <span class="kpi-trend-badge" id="trend-revenue" style="font-size: 0.7rem; font-weight: 700; color: #10B981;">+0.0%</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-revenue">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-revenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#D4A373" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#D4A373" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-revenue-area" fill="url(#grad-revenue)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-revenue" stroke="#D4A373" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(212,163,115,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 2. Orders -->
-            <div class="card-kpi" id="kpi-orders">
-              <div class="kpi-header">
-                <span class="kpi-title">Completed Orders</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="shopping-bag"></i></div>
+            <div class="card-kpi" id="kpi-orders" style="border: 1px solid rgba(16, 185, 129, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(20, 32, 28, 0.6) 0%, rgba(12, 18, 16, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="shopping-bag" style="width: 14px; height: 14px; color: #10B981;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Completed Orders</span>
               </div>
-              <div class="kpi-value" id="val-orders">0</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend up" id="trend-orders" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="arrow-up-right" style="width:12px; height:12px;"></i> +0%</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-primary); fill: none; stroke-width: 1.8;"><path id="spark-orders" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-orders" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">0</span>
+                <span class="kpi-trend-badge" id="trend-orders" style="font-size: 0.7rem; font-weight: 700; color: #10B981;">+0%</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-orders">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-orders" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#10B981" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#10B981" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-orders-area" fill="url(#grad-orders)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-orders" stroke="#10B981" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(16,185,129,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 3. Queue Load -->
-            <div class="card-kpi" id="kpi-queue">
-              <div class="kpi-header">
-                <span class="kpi-title">Queue Length</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="users"></i></div>
+            <div class="card-kpi" id="kpi-queue" style="border: 1px solid rgba(244, 63, 94, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(35, 20, 24, 0.6) 0%, rgba(18, 11, 13, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="users" style="width: 14px; height: 14px; color: #F43F5E;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Queue Length</span>
               </div>
-              <div class="kpi-value" id="val-queue">0</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend" id="trend-queue" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--text-muted); font-weight: 600;"><i data-lucide="minus" style="width:12px; height:12px;"></i> Static</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-warning); fill: none; stroke-width: 1.8;"><path id="spark-queue" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-queue" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">0</span>
+                <span class="kpi-trend-badge" id="trend-queue" style="font-size: 0.7rem; font-weight: 700; color: #EF4444;">Static</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-queue">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-queue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#F43F5E" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#F43F5E" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-queue-area" fill="url(#grad-queue)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-queue" stroke="#F43F5E" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(244,63,94,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 4. Average Wait Time -->
-            <div class="card-kpi" id="kpi-wait">
-              <div class="kpi-header">
-                <span class="kpi-title">Average Wait Time</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="hourglass"></i></div>
+            <div class="card-kpi" id="kpi-wait" style="border: 1px solid rgba(132, 204, 22, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(28, 32, 20, 0.6) 0%, rgba(15, 18, 11, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="hourglass" style="width: 14px; height: 14px; color: #84CC16;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Average Wait Time</span>
               </div>
-              <div class="kpi-value" id="val-wait">0.0m</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend down" id="trend-wait" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="arrow-down-right" style="width:12px; height:12px;"></i> -0%</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-wait" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-wait" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">0.0 min</span>
+                <span class="kpi-trend-badge" id="trend-wait" style="font-size: 0.7rem; font-weight: 700; color: #10B981;">Optimal</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-wait">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-wait" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#84CC16" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#84CC16" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-wait-area" fill="url(#grad-wait)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-wait" stroke="#84CC16" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(132,204,22,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 5. Inventory Health -->
-            <div class="card-kpi" id="kpi-inventory-health">
-              <div class="kpi-header">
-                <span class="kpi-title">Inventory Health</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="package"></i></div>
+            <div class="card-kpi" id="kpi-inventory-health" style="border: 1px solid rgba(245, 158, 11, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(32, 28, 20, 0.6) 0%, rgba(18, 16, 11, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="package" style="width: 14px; height: 14px; color: #F59E0B;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Inventory Health</span>
               </div>
-              <div class="kpi-value" id="val-inventory-health">100%</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend" id="trend-inventory-health" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="trending-up" style="width:12px; height:12px;"></i> Optimal</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-inventory-health" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-inventory-health" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">100%</span>
+                <span class="kpi-trend-badge" id="trend-inventory-health" style="font-size: 0.7rem; font-weight: 700; color: #10B981;">Optimal</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-inventory-health">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-inventory" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-inventory-health-area" fill="url(#grad-inventory)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-inventory-health" stroke="#F59E0B" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(245,158,11,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 6. Machine Health -->
-            <div class="card-kpi" id="kpi-machine-health">
-              <div class="kpi-header">
-                <span class="kpi-title">Machine Health</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="cpu"></i></div>
+            <div class="card-kpi" id="kpi-machine-health" style="border: 1px solid rgba(16, 185, 129, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(20, 32, 28, 0.6) 0%, rgba(12, 18, 16, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="settings" style="width: 14px; height: 14px; color: #10B981;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Machine Health</span>
               </div>
-              <div class="kpi-value" id="val-machine-health">100%</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend" id="trend-machine-health" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="activity" style="width:12px; height:12px;"></i> Stable</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-machine-health" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-machine-health" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">100%</span>
+                <span class="kpi-trend-badge" id="trend-machine-health" style="font-size: 0.7rem; font-weight: 700; color: #10B981;">Stable</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-machine-health">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-machine" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#10B981" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#10B981" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-machine-health-area" fill="url(#grad-machine)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-machine-health" stroke="#10B981" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(16,185,129,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 7. Customer Satisfaction -->
-            <div class="card-kpi" id="kpi-satisfaction">
-              <div class="kpi-header">
-                <span class="kpi-title">Satisfaction Rate</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="smile"></i></div>
+            <div class="card-kpi" id="kpi-satisfaction" style="border: 1px solid rgba(132, 204, 22, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(28, 32, 20, 0.6) 0%, rgba(15, 18, 11, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="smile" style="width: 14px; height: 14px; color: #84CC16;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Satisfaction Rate</span>
               </div>
-              <div class="kpi-value" id="val-satisfaction">0%</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend up" id="trend-satisfaction" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="arrow-up-right" style="width:12px; height:12px;"></i> +0%</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-satisfaction" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-satisfaction" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">0%</span>
+                <span class="kpi-trend-badge" id="trend-satisfaction" style="font-size: 0.7rem; font-weight: 700; color: #10B981;">+0%</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-satisfaction">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-satisfaction" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#84CC16" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#84CC16" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-satisfaction-area" fill="url(#grad-satisfaction)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-satisfaction" stroke="#84CC16" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(132,204,22,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 8. Cafe Reputation -->
-            <div class="card-kpi" id="kpi-reputation">
-              <div class="kpi-header">
-                <span class="kpi-title">Café Reputation</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="award"></i></div>
+            <div class="card-kpi" id="kpi-reputation" style="border: 1px solid rgba(245, 158, 11, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(32, 28, 20, 0.6) 0%, rgba(18, 16, 11, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="star" style="width: 14px; height: 14px; color: #F59E0B;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Café Reputation</span>
               </div>
-              <div class="kpi-value" id="val-reputation">0/100</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend up" id="trend-reputation" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="trending-up" style="width:12px; height:12px;"></i> Stable</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-primary); fill: none; stroke-width: 1.8;"><path id="spark-reputation" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-reputation" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">0/100</span>
+                <span class="kpi-trend-badge" id="trend-reputation" style="font-size: 0.7rem; font-weight: 700; color: #F59E0B;">Stable</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-reputation">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-reputation" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-reputation-area" fill="url(#grad-reputation)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-reputation" stroke="#F59E0B" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(245,158,11,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 9. Staff Efficiency -->
-            <div class="card-kpi" id="kpi-staff">
-              <div class="kpi-header">
-                <span class="kpi-title">Staff Efficiency</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="user-check"></i></div>
+            <div class="card-kpi" id="kpi-staff" style="border: 1px solid rgba(59, 130, 246, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(20, 28, 35, 0.6) 0%, rgba(11, 15, 18, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="user-check" style="width: 14px; height: 14px; color: #3B82F6;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">Staff Efficiency</span>
               </div>
-              <div class="kpi-value" id="val-staff">1.0x</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend" id="trend-staff" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-success); font-weight: 600;"><i data-lucide="shield" style="width:12px; height:12px;"></i> Active</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-success); fill: none; stroke-width: 1.8;"><path id="spark-staff" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-staff" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">1.0x</span>
+                <span class="kpi-trend-badge" id="trend-staff" style="font-size: 0.7rem; font-weight: 700; color: #10B981;">Active</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-staff">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-staff" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-staff-area" fill="url(#grad-staff)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-staff" stroke="#3B82F6" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(59,130,246,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
+ 
             <!-- 10. AI Confidence -->
-            <div class="card-kpi" id="kpi-ai">
-              <div class="kpi-header">
-                <span class="kpi-title">AI Confidence</span>
-                <div class="kpi-icon-wrapper"><i data-lucide="brain"></i></div>
+            <div class="card-kpi" id="kpi-ai" style="border: 1px solid rgba(99, 102, 241, 0.18); display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; min-height: 145px; border-radius: 12px; background: linear-gradient(135deg, rgba(24, 20, 35, 0.6) 0%, rgba(13, 11, 18, 0.6) 100%);">
+              <div class="kpi-header" style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem;">
+                <i data-lucide="brain" style="width: 14px; height: 14px; color: #6366F1;"></i>
+                <span class="kpi-title" style="font-size: 0.76rem; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--text-secondary);">AI Confidence</span>
               </div>
-              <div class="kpi-value" id="val-ai">85%</div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-                <span class="kpi-trend" id="trend-ai" style="font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem; color: var(--color-primary); font-weight: 600;"><i data-lucide="sparkles" style="width:12px; height:12px;"></i> Synced</span>
-                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="60" height="20" style="stroke: var(--color-primary); fill: none; stroke-width: 1.8;"><path id="spark-ai" d="M 0 15 L 100 15" /></svg>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="kpi-value" id="val-ai" style="font-size: 1.45rem; font-weight: 700; color: #FFF; margin: 0; line-height: 1;">85%</span>
+                <span class="kpi-trend-badge" id="trend-ai" style="font-size: 0.7rem; font-weight: 700; color: #10B981;">High</span>
               </div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.35rem;">Updated <span id="time-ai">Just now</span></div>
+              <div class="sparkline-container" style="width: 100%; height: 35px; position: relative;">
+                <svg class="kpi-sparkline" viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                  <defs>
+                    <linearGradient id="grad-ai" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#6366F1" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="spark-ai-area" fill="url(#grad-ai)" d="M 0 30 L 100 30 Z" />
+                  <path id="spark-ai" stroke="#6366F1" stroke-width="1.8" fill="none" d="M 0 15 L 100 15" style="filter: drop-shadow(0 0 2px rgba(99,102,241,0.25));" />
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.35rem; margin-top: 0.25rem;">
+                <span>vs yesterday</span>
+                <i data-lucide="chevron-right" style="width: 10px; height: 10px; opacity: 0.6;"></i>
+              </div>
             </div>
-
           </div>
-
+ 
           <!-- Middle Split Panel (Observations, Goals & Predictions) -->
           <div class="dashboard-panels-split" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
             
@@ -479,30 +694,31 @@
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
               
               <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem;">
-                <!-- Smart Goals Card -->
-                <div class="panel-container" style="padding: 1rem; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
-                  <div class="panel-header" style="margin-bottom: 0.5rem;">
-                    <h3 class="panel-title">Today's Smart Goal</h3>
-                    <span class="badge" style="background: rgba(212, 163, 115, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); font-size: 0.6rem; padding: 0.1rem 0.25rem; border-radius: 4px;">ACTIVE</span>
+                <!-- Today's Goal Card (Premium Purple Card) -->
+                <div class="panel-container premium-purple-card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; height: 100%; background: linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(124, 58, 237, 0.2) 100%); border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 10px 30px rgba(124, 58, 237, 0.15), inset 0 1px 0 0 rgba(255,255,255,0.05); position: relative;">
+                  <div style="position: absolute; top: -50px; right: -50px; width: 120px; height: 120px; background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%); filter: blur(20px); pointer-events: none;"></div>
+                  <div class="panel-header" style="margin-bottom: 0.5rem; border: none; padding: 0;">
+                    <h3 class="panel-title" style="color: #FFF; font-size: 0.95rem;">Today's Smart Goal</h3>
+                    <span class="badge" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #C084FC; font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700;">ACTIVE</span>
                   </div>
-                  <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 0.75rem; border-radius: 12px; margin-bottom: 0.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(139, 92, 246, 0.15); padding: 0.75rem; border-radius: 12px; margin-bottom: 0.5rem; position: relative; z-index: 2;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
                       <span id="goal-active-type" style="font-weight: 700; color: #FFF; font-size: 0.85rem;">Reduce Wait Time</span>
-                      <span id="goal-active-progress" style="font-weight: 800; color: var(--color-primary); font-size: 0.85rem;">75%</span>
+                      <span id="goal-active-progress" style="font-weight: 800; color: #C084FC; font-size: 0.85rem;">75%</span>
                     </div>
-                    <div style="height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 0.35rem;">
-                      <div id="goal-progress-fill" style="width: 75%; height: 100%; background: var(--color-primary); border-radius: 3px; transition: width 0.6s ease;"></div>
+                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 0.4rem;">
+                      <div id="goal-progress-fill" style="width: 75%; height: 100%; background: linear-gradient(90deg, #A855F7, #C084FC); border-radius: 3px; transition: width 0.6s ease; box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);"></div>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted);">
-                      <span>ETA: <strong id="goal-active-eta">20:00</strong></span>
-                      <span>Target: &lt; 1.5 mins</span>
+                      <span>ETA: <strong id="goal-active-eta" style="color: #DDD;">20:00</strong></span>
+                      <span>Target: <strong style="color: #DDD;">&lt; 1.5 mins</strong></span>
                     </div>
                   </div>
-                  <div style="font-size: 0.7rem; color: var(--text-secondary); border-left: 2px solid var(--color-primary); padding-left: 0.5rem; margin-top: 0.25rem;">
+                  <div style="font-size: 0.7rem; color: #E9D5FF; border-left: 2px solid #A855F7; padding-left: 0.5rem; margin-top: 0.25rem; position: relative; z-index: 2;">
                     <strong style="color: #FFF;">AI Strategy:</strong> <span id="goal-active-strategy">Optimize Emma to Espresso, Liam to registers.</span>
                   </div>
                 </div>
-
+ 
                 <!-- Circular Radial Gauge -->
                 <div class="panel-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; height: 100%;">
                   <h3 class="panel-title" style="margin-bottom: 0.5rem; font-size: 0.78rem; text-transform: uppercase; color: var(--text-secondary);">Café Performance</h3>
@@ -518,7 +734,7 @@
                   </div>
                 </div>
               </div>
-
+ 
               <!-- Predictions Deck -->
               <div class="panel-container" style="padding: 1rem; flex-grow: 1;">
                 <h3 class="panel-title" style="margin-bottom: 0.75rem;">Predictive Telemetry</h3>
@@ -541,9 +757,9 @@
                   </div>
                 </div>
               </div>
-
+ 
             </div>
-
+ 
             <!-- Right panel: BrewMind Brain Insights -->
             <div class="panel-container" style="display: flex; flex-direction: column; height: 100%;">
               <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
@@ -566,9 +782,9 @@
                 <!-- Insights list generated by Brain.js -->
               </div>
             </div>
-
+ 
           </div>
-
+ 
           <!-- Bottom Split Panel (Hourly Journal + Timeline & Best Sellers) -->
           <div class="dashboard-panels-split" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.25rem;">
             
@@ -584,11 +800,14 @@
                 <p style="font-size: 0.72rem; color: var(--text-muted); text-align: center; margin-top: 1.5rem;">No journal entries compiled yet. Writes hourly logs.</p>
               </div>
             </div>
-
-            <!-- Right panel: Best Sellers -->
+ 
+            <!-- Right panel: Top Selling Products (🏆 Upgraded product intelligence) -->
             <div class="panel-container" style="display: flex; flex-direction: column;">
               <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
-                <h3 class="panel-title">Product Intelligence</h3>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1rem;">🏆</span>
+                  <h3 class="panel-title">Top Selling Products</h3>
+                </div>
               </div>
               <div style="overflow-y: auto; max-height: 220px;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.72rem; text-align: left;" id="best-sellers-table">
@@ -606,25 +825,29 @@
                 </table>
               </div>
             </div>
-
+ 
           </div>
 
-          <!-- Active Operations Activity Feed (Timeline) -->
-          <div class="panel-container" style="margin-top: 1.25rem;">
-            <div class="panel-header" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
-              <h3 class="panel-title">Live Operations Activity Log</h3>
-              <span class="panel-action" id="action-view-twin">Go to Digital Twin</span>
+          <!-- Bottom-most Split Panel (Active Queue + Operational Advisory) -->
+          <div class="dashboard-panels-split" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.25rem; margin-top: 1.25rem;">
+            
+            <!-- Active Queue & Workflow Panel -->
+            <div class="panel-container" id="active-queue-panel" style="display: flex; flex-direction: column;">
+              <!-- Rendered dynamically by App.js -->
             </div>
-            <div id="operations-timeline" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.25rem;">
-              <!-- Timeline operations list -->
+
+            <!-- Operational Advisory Panel -->
+            <div class="panel-container" id="operational-advisory-panel" style="display: flex; flex-direction: column;">
+              <!-- Rendered dynamically by App.js -->
             </div>
+
           </div>
 
         </section>
 
         <!-- View 2: Digital Twin -->
-        <section id="view-twin" class="view-section">
-          <div class="panel-container" style="height: 100%; display: flex; flex-direction: column;">
+        <section id="view-twin" class="view-section" style="height: auto; min-height: 100%;">
+          <div class="panel-container" style="height: auto; min-height: 100%; display: flex; flex-direction: column;">
             <div class="panel-header">
               <h3 class="panel-title">Real-time Campus Café Digital Twin</h3>
               <div style="display: flex; gap: 0.5rem;">
@@ -869,7 +1092,6 @@
                   <select id="input-theme" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none; height: 38px;">
                     <option value="dark-coffee">Espresso Bronze (Brand)</option>
                     <option value="dark-modern">Obsidian Modern (SaaS)</option>
-                    <option value="latte-light">Cappuccino Light (Cream)</option>
                   </select>
                 </div>
               </div>
@@ -1099,7 +1321,6 @@
             <select id="onboard-theme" style="background: rgba(16,12,10,0.9); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 0.8rem; color: #FFF; font-family: inherit; font-size: 0.85rem; outline: none; height: 38px;">
               <option value="dark-coffee">Espresso Bronze (Brand)</option>
               <option value="dark-modern">Obsidian Modern (SaaS)</option>
-              <option value="latte-light">Cappuccino Light (Cream)</option>
             </select>
           </div>
         </div>

@@ -24,7 +24,7 @@ const DEFAULT_PROFILE = {
 };
 
 const DEFAULT_PREFERENCES = {
-  theme: 'dark', // dark-coffee, dark-modern, latte-light
+  theme: 'dark', // dark-coffee, dark-modern
   soundEnabled: true,
   voiceEnabled: false,
   notificationsMuted: false
