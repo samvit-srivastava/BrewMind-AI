@@ -1,16 +1,15 @@
 /* -------------------------------------------------------------
  * BREWMIND AI - App Controller & Core Orchestrator
  * ------------------------------------------------------------- */
-
-import { soundEffects, formatCurrency, formatSimulationTime } from './utils.js';
-import { memory } from './memory.js';
-import { simulation, DRINK_MENU } from './simulation.js';
-import { twin } from './twin.js';
-import { inventoryController } from './inventory.js';
-import { analyticsController } from './analytics.js';
-import { copilot } from './copilot.js';
-import { demoController } from './demo.js';
-import { sandboxController } from './scenarios.js';
+import { soundEffects, formatCurrency, formatSimulationTime } from './utils.js?v=2.0';
+import { memory } from './memory.js?v=2.0';
+import { simulation, DRINK_MENU } from './simulation.js?v=2.0';
+import { twin } from './twin.js?v=2.0';
+import { inventoryController } from './inventory.js?v=2.0';
+import { analyticsController } from './analytics.js?v=2.0';
+import { copilot } from './copilot.js?v=2.0';
+import { demoController } from './demo.js?v=2.0';
+import { sandboxController } from './scenarios.js?v=2.0';
 
 /**
  * Web Audio API synthesizer for the cinematic splash screen.
@@ -2244,7 +2243,7 @@ class AppController {
       const isMuted = memory.preferences.notificationsMuted || false;
       const muteIcon = document.getElementById('mute-icon');
       if (isMuted && muteIcon) {
-        muteIcon.setAttribute('data-lucide', 'volume-x');
+        muteIcon.setAttribute('data-lucide', 'bell-off');
         if (window.lucide) lucide.createIcons();
       }
 
@@ -2255,7 +2254,7 @@ class AppController {
 
         const icon = document.getElementById('mute-icon');
         if (icon) {
-          icon.setAttribute('data-lucide', newMuted ? 'volume-x' : 'volume-2');
+          icon.setAttribute('data-lucide', newMuted ? 'bell-off' : 'bell');
           if (window.lucide) lucide.createIcons();
         }
 

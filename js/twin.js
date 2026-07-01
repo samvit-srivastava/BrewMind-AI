@@ -2,7 +2,7 @@
  * BREWMIND AI - Digital Twin View Controller
  * ------------------------------------------------------------- */
 
-import { DRINK_MENU } from './simulation.js';
+import { DRINK_MENU } from './simulation.js?v=2.0';
 
 class DigitalTwin {
   constructor() {
@@ -445,10 +445,6 @@ class DigitalTwin {
             <span>»</span>
           </button>
         </div>
-      </div>
-
-      </div>
-
       </div>
     `;
   }
@@ -1141,29 +1137,10 @@ class DigitalTwin {
   updateCameraFocus(state) {
     const svg = document.getElementById('twin-svg');
     if (!svg) return;
-
-    const hour = state.clock.hours;
-    const isFailure = state.demo && state.demo.activeScenario === 'Machine Failure';
-    const isLowStock = state.warnings && Object.values(state.warnings.lowStock).some(Boolean);
-
-    let targetViewBox = '0 0 600 400';
-
-    if (isFailure) {
-      // Zoom on espresso machines (coordinates around 130-220, 230-265)
-      targetViewBox = '80 160 320 213';
-    } else if (hour >= 8 && hour < 11) {
-      // Zoom on queue lines (coordinates around 300-500, 250-350)
-      targetViewBox = '240 160 360 240';
-    } else if (isLowStock) {
-      // Zoom on counters and inventory area
-      targetViewBox = '110 140 380 253';
-    }
-
     const currentVB = svg.getAttribute('viewBox');
-    if (currentVB !== targetViewBox) {
-      const parts = targetViewBox.split(' ').map(Number);
+    if (currentVB !== '0 0 600 400') {
       gsap.to(svg, {
-        attr: { viewBox: `${parts[0]} ${parts[1]} ${parts[2]} ${parts[3]}` },
+        attr: { viewBox: '0 0 600 400' },
         duration: 1.6,
         ease: 'power2.inOut'
       });

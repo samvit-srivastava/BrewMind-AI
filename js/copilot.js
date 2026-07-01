@@ -1,10 +1,9 @@
 /* -------------------------------------------------------------
  * BREWMIND AI - AI Operations Copilot Drawer
  * ------------------------------------------------------------- */
-
-import { memory } from './memory.js';
-import { soundEffects } from './utils.js';
-import { simulation } from './simulation.js';
+import { memory } from './memory.js?v=2.0';
+import { soundEffects } from './utils.js?v=2.0';
+import { simulation } from './simulation.js?v=2.0';
 
 class AICopilot {
   constructor() {
@@ -97,6 +96,20 @@ class AICopilot {
     if (this.voiceBtn) {
       this.voiceBtn.addEventListener('click', () => {
         this.toggleVoiceRecording();
+      });
+    }
+
+    // Suggestion chips delegation
+    if (this.chatHistoryContainer) {
+      this.chatHistoryContainer.addEventListener('click', (e) => {
+        const chip = e.target.closest('.suggest-chip-btn');
+        if (chip) {
+          const query = chip.getAttribute('data-query');
+          if (query && this.userInputField) {
+            this.userInputField.value = query;
+            this.handleUserSend();
+          }
+        }
       });
     }
   }
@@ -465,13 +478,42 @@ class AICopilot {
    * Simple markdown to HTML converter for chat bubbles.
    */
   renderMarkdown(text) {
-    return text
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)$/gm, '<span style="display: block; padding-left: 0.8rem;">• $1</span>')
-      .replace(/^\d+\. (.+)$/gm, '<span style="display: block; padding-left: 0.8rem;">$&</span>')
-      .replace(/\n/g, '<br>');
+    if (!text) return '';
+    
+    // Escape HTML characters safely
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+      
+    // Parse headers (###, ##, #)
+    html = html.replace(/^### (.*?)$/gm, '<h4 style="color: var(--color-primary); font-size: 0.92rem; margin: 0.8rem 0 0.4rem 0; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.3px; border-bottom: 1px solid rgba(212, 163, 115, 0.08); padding-bottom: 0.25rem;">$1</h4>');
+    html = html.replace(/^## (.*?)$/gm, '<h3 style="color: #FFF; font-size: 1.05rem; margin: 1rem 0 0.5rem 0; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.3px;">$1</h3>');
+    html = html.replace(/^# (.*?)$/gm, '<h2 style="color: #FFF; font-size: 1.2rem; margin: 1.2rem 0 0.6rem 0; font-weight: 800; display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.3px;">$1</h2>');
+
+    // Parse bold (**text**)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #FFF; font-weight: 700;">$1</strong>');
+
+    // Parse italic (*text*)
+    html = html.replace(/\*(.*?)\*/g, '<em style="color: var(--text-secondary); font-style: italic;">$1</em>');
+
+    // Parse styled bullet points (- item or * item)
+    html = html.replace(/^[-\*] (.*?)$/gm, '<div style="display: flex; align-items: flex-start; gap: 0.45rem; margin: 0.35rem 0; font-size: 0.82rem; line-height: 1.45; color: var(--text-secondary);"><span style="color: var(--color-primary); flex-shrink: 0; font-size: 0.75rem; margin-top: 0.15rem;">◆</span><span style="flex-grow: 1;">$1</span></div>');
+
+    // Parse ordered lists (1. item)
+    html = html.replace(/^(\d+)\. (.*?)$/gm, '<div style="display: flex; align-items: flex-start; gap: 0.45rem; margin: 0.35rem 0; font-size: 0.82rem; line-height: 1.45; color: var(--text-secondary);"><span style="color: var(--color-primary); font-weight: 700; font-size: 0.82rem; min-width: 14px; text-align: right; flex-shrink: 0;">$1.</span><span style="flex-grow: 1;">$2</span></div>');
+
+    // Replace newlines with standard paragraph line breaks (except after lists and headers)
+    html = html.replace(/\n/g, '<br>');
+
+    // Format highlight recommendation boxes (e.g. text containing BrewMind Recommendation)
+    if (html.includes('💡')) {
+      html = html.replace(/💡 (&lt;strong style=&quot;color: #FFF; font-weight: 700;&quot;&gt;)?BrewMind Recommendation:?(&lt;\/strong&gt;)?(<br>)?(.*?)(?=(<h4|<div|$))/g, 
+        '<div style="background: rgba(212, 163, 115, 0.04); border-left: 3px solid var(--color-primary); border-radius: 6px; padding: 0.75rem; margin: 0.75rem 0; font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary);"><div style="font-weight: 700; color: #FFF; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;">💡 BrewMind Recommendation</div>$4</div>'
+      );
+    }
+
+    return html;
   }
 
   /**
@@ -603,32 +645,26 @@ LIVE CAFÉ DASHBOARD DATA:
   Cups: ${state.inventory.cups.current} / ${state.inventory.cups.max} (${(state.inventory.cups.current/state.inventory.cups.max*100).toFixed(0)}%)
 `;
     
-    const systemPrompt = `You are BrewMind AI — a highly intelligent Campus Café Business Copilot.
+    const systemPrompt = `You are BrewMind AI — a charismatic, highly analytical Campus Café Business Consultant & Master Barista.
 
-Your role is to help the café manager run a successful campus coffee shop. You have access to LIVE operational data below.
+PERSONALITY & TONE:
+- **Expert & Analytical**: Speak like a top-tier retail manager and retail operations consultant. You understand margins, employee utilization, JIT logistics, and supply chains.
+- **Charismatic & Caffeinated**: Warm, encouraging, energetic, and highly professional. Use subtle espresso-themed double-entendres when appropriate (e.g., "let's grind down on the numbers", "brewing up a strategy", "keeping stress levels from boiling over"), but keep it crisp and professional.
+- **Data-Driven**: Never speak in generalities. Always cite the exact live figures from the café's state context below.
 
-You can answer ANY question about:
-- Business strategy (pricing, marketing, growth, profitability)
-- Operations (staffing, scheduling, inventory management, equipment maintenance)
-- Customer experience (wait times, satisfaction, menu optimization)
-- Financial analysis (revenue forecasting, cost control, ROI)
-- Staff management (performance, stress levels, shift rotation)
-- Competitive analysis and market positioning
-- Risk assessment and contingency planning
+ROLE & RESPONSIBILITY:
+- Help the café manager (samvit) optimize store operations, increase hourly revenue, minimize queue bottlenecks, manage barista burnout, and guarantee freshness.
+- Scan the live state data below. If you detect ANY metric that is slipping (e.g., satisfaction < 70%, machine health < 75%, queue length > 5, inventory below 35%), proactively flag it with a ⚠ or 🔴 indicator.
 
-STAFF PROFILES:
-- Emma: Fast (1.25x speed) but lower quality. Best for high-volume rush periods.
-- Sophia: Balanced (1.0x speed, 1.0x quality). Reliable all-rounder.
-- Liam: Slow (0.75x speed) but excellent quality (1.3x). Best for premium drinks and Faculty Guests.
+STAFF CHARACTERISTICS:
+- **Emma**: Fast (1.25x speed) but lower quality (0.7x). Best for high-volume student rushes. High stress sensitivity.
+- **Sophia**: Balanced (1.0x speed, 1.0x quality). A reliable, steady all-rounder barista.
+- **Liam**: Slow (0.75x speed) but premium quality (1.3x). Best for high-margin specialty drinks and Faculty Guests to drive reputation.
 
-GUIDELINES:
-- Use the live data below to give specific, data-driven answers
-- Reference actual numbers from the dashboard
-- Be actionable — tell the manager exactly what to do
-- Use markdown formatting: **bold** for key metrics, bullet points for lists
-- Keep responses concise and fast (3-5 sentences maximum)
-- If you spot problems in the data, proactively flag them
-- Use emojis sparingly for visual clarity (✅, ⚠, 🔴, 📊, 💡)
+OUTPUT STYLE:
+- Use markdown headers (e.g., \`### Staff Assessment\`) to structure your answer.
+- Always include a highlighted **💡 BrewMind Recommendation** section with a clear action item at the bottom.
+- Keep responses compact, fast, and structured for quick reading on a dashboard.
 
 ${stateContext}`;
 
@@ -764,14 +800,15 @@ ${stateContext}`;
   }
 
   /**
-   * Generates a state-aware response using local heuristic rules if offline.
-   */
-  generateLocalRuleResponse(prompt) {
+   * Generate  generateLocalRuleResponse(prompt) {
     const state = window.BrewMind.getState();
     const p = prompt.toLowerCase().trim();
     this._pendingRecommendation = null;
 
-    // --- System / AI status queries ---
+    // Helper to calculate inventory status
+    const getInvPct = (item) => (item.current / item.max * 100).toFixed(0);
+
+    // --- Intent 1: AI / System Diagnostics ---
     if (p.includes('lm studio') || p.includes('lmstudio') || p.includes('ollama') || p.includes('api') || p.includes('ai status') || p.includes('connected') || p.includes('working')) {
       const { aiProvider, aiEndpoint, geminiKey } = memory.profile;
       const hasKey = !!geminiKey;
@@ -780,173 +817,235 @@ ${stateContext}`;
       const modelDetected = this.detectedLocalModel;
       
       if (isLocal && modelDetected) {
-        return `**AI Status: ✅ Connected**\n- Provider: **${providerLabel}**\n- Model: **${modelDetected}**\n- Endpoint: ${aiEndpoint || 'Default'}\n\nYour local AI is running and ready!`;
+        return `### ⚙ AI System Diagnostics: Connected\n\nI am currently hooked into your local **${providerLabel}** instance running **${modelDetected}** at \`${aiEndpoint || 'default'}\`.\n\nAll natural language requests are processed locally with zero cloud delay. Let's brew some smart strategies! ☕`;
       } else if (isLocal && this._corsBlocked) {
-        return `**AI Status: 🔴 CORS Blocked**\n\n${providerLabel} is running but the browser is **blocking** the connection.\n\n**Fix this in 10 seconds:**\n1. Open **${providerLabel}**\n2. Click **"Server Settings"** at the top\n3. Turn ON **"Enable CORS"**\n4. **Refresh this page**\n\nThat's it! After enabling CORS, I'll connect to your local AI automatically.`;
+        return `### ⚙ AI System Diagnostics: CORS Blocked\n\nYour **${providerLabel}** server is active, but the browser is blocking my requests due to cross-origin security rules.\n\n**Quick Fix (10 seconds):**\n1. Open **${providerLabel}**\n2. Click the **"Settings" / "Server Settings"** icon\n3. Enable the **"CORS" (Cross-Origin Resource Sharing)** toggle\n4. **Hard-refresh this page**\n\nI'll connect immediately after the refresh!`;
       } else if (isLocal) {
-        return `**AI Status: ⚠ Not Connected**\n- Provider: **${providerLabel}** (selected)\n- Endpoint: ${aiEndpoint || 'http://127.0.0.1:1234'}\n\n**Checklist:**\n1. ✅ Is ${providerLabel} running? (Check taskbar)\n2. ✅ Is a model loaded? (Open ${providerLabel} → Load a model)\n3. ✅ Is CORS enabled? (Server Settings → Enable CORS)\n4. ✅ Is the server started? (Local Server → Start)\n\nAfter fixing, **refresh this page**.`;
+        return `### ⚙ AI System Diagnostics: Offline\n\nI cannot establish a connection with the local **${providerLabel}** server at \`${aiEndpoint || 'http://127.0.0.1:1234'}\`.\n\n**Operational Checklist:**\n- [ ] Is ${providerLabel} launched on your system?\n- [ ] Is a model loaded and running in the background?\n- [ ] Is the local port open and CORS enabled?\n\n*Running in high-fidelity local heuristic mode until connection is established.*`;
       } else if (hasKey) {
-        return `**AI Status: ✅ Cloud API Ready**\n- Provider: **${aiProvider === 'openai' ? 'OpenAI' : 'Gemini'}**\n- API Key: Configured`;
+        return `### ⚙ AI System Diagnostics: Cloud Active\n\nI am connected to the cloud **${aiProvider === 'openai' ? 'OpenAI' : 'Gemini'} API**. Live telemetry tokens are actively feeding the model.`;
       } else {
-        return `**AI Status: No AI Configured**\n\n**Options to enable AI:**\n- **Local:** Start LM Studio or Ollama, load a model, enable CORS\n- **Cloud:** Go to Settings → enter a Gemini API Key`;
+        return `### ⚙ AI System Diagnostics: Heuristic Mode\n\nNo active LLM API key or local servers are configured. I am running on my built-in state-aware reasoning engine.\n\nTo unlock deep reasoning, go to **Settings** and configure a Gemini API key or start a local LM Studio / Ollama server.`;
       }
     }
 
-    // --- Greetings ---
-    if (/^(hi|hello|hey|yo|sup|good morning|good evening|good afternoon)\b/.test(p)) {
-      // Build a contextual greeting based on current state
+    // --- Intent 2: Small Talk / Greetings ---
+    if (/^(hi|hello|hey|yo|sup|good morning|good evening|good afternoon|who are you|name)\b/.test(p)) {
       const hour = state.clock.hours;
       const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
       const qLen = state.customers.queueLength;
       const sat = state.customerSatisfaction;
       
-      let statusNote = '';
-      if (qLen > 6) statusNote = `\n\n⚠ **Heads up:** Queue is at **${qLen} students** — consider hiring temp staff.`;
-      else if (sat < 70) statusNote = `\n\n⚠ **Attention:** Satisfaction dropped to **${sat}%** — let's investigate.`;
-      else if (state.machineHealth < 60) statusNote = `\n\n⚠ **Alert:** Machine health is at **${state.machineHealth}%** — maintenance needed.`;
-      else statusNote = `\n\n✅ Operations look healthy! Queue: ${qLen} students, Satisfaction: ${sat}%.`;
-      
-      return `${timeGreeting}! I'm **BrewMind**, your AI Operations Copilot.${statusNote}\n\nWhat would you like to know? Try asking me things like:\n- *"How are my baristas doing?"*\n- *"Should I restock?"*\n- *"What's our revenue today?"*\n- *"Optimize my operations"*`;
+      let stateAlert = '';
+      if (qLen > 6) {
+        stateAlert = `\n\n⚠ **Heads up:** The queue is stacking up with **${qLen} students**. Emma and Sophia are under load—we should grind down and optimize shifts.`;
+      } else if (sat < 70) {
+        stateAlert = `\n\n⚠ **Heads up:** Customer satisfaction has dropped to **${sat}%**. Let's check wait times or machine health before we lose reputation.`;
+      } else {
+        stateAlert = `\n\n✅ Operations look steady! We have **${qLen}** in queue and a solid **${sat}%** satisfaction index.`;
+      }
+
+      return `### ☕ Greetings, manager!\n\n${timeGreeting}! I am **BrewMind AI**, your caffeinated operations consultant. I've scanned the cafe's sensors and compiled a live view.${stateAlert}\n\nAsk me anything about your baristas (*"staff performance"*), stock (*"check inventory"*), profitability (*"revenue"*), or type *"help"* for a list of operations commands!`;
     }
 
-    // --- Staff analysis ---
-    if (p.includes('staff') || p.includes('emma') || p.includes('liam') || p.includes('sophia') || p.includes('barista') || p.includes('hire') || p.includes('team')) {
+    // --- Intent 3: Staffing / Baristas ---
+    if (p.includes('staff') || p.includes('emma') || p.includes('liam') || p.includes('sophia') || p.includes('barista') || p.includes('hire') || p.includes('team') || p.includes('employee')) {
       const emma = state.staff.list.find(b => b.name === 'Emma');
       const sophia = state.staff.list.find(b => b.name === 'Sophia');
       const liam = state.staff.list.find(b => b.name === 'Liam');
       
-      // Analyze if hiring is actually needed
       const qLen = state.customers.queueLength;
-      let actionAdvice = '';
+      let recommendationBlock = '';
+      let urgencyText = '';
+
       if (qLen > 5) {
-        actionAdvice = `\n\n**⚡ Action Needed:** Queue is congested (${qLen} students). I recommend hiring temporary support.`;
+        urgencyText = `\n\n⚠ **Congestion Alert:** Queue length is currently **${qLen} students**, causing average wait times to rise to **${state.customers.avgWaitTime.toFixed(1)} mins**.`;
+        
         this._pendingRecommendation = {
-          action: 'hire_barista', title: 'Hire Temporary Barista Support',
-          observation: `Queue length is ${qLen} students — exceeding comfortable thresholds.`,
-          reasoning: 'Adding a barista splits the register load and accelerates drink prep during rush.',
-          assumptions: 'Arrival rates remain stable; equipment is operational.',
-          confidencePct: 94, cost: '₹850', benefit: 'Wait time decreases ~31%', roi: '147%', timeToImpact: 'Immediate'
+          action: 'hire_barista',
+          title: 'Hire Temporary Barista Support',
+          confidencePct: 94,
+          observation: `Queue size is ${qLen} students, pushing staff stress values up.`,
+          reasoning: 'Adding an extra barista to the register splits transaction processing time, allowing Emma and Sophia to focus solely on brewing.',
+          assumptions: 'Budget has sufficient operational cash; spare registers are open.',
+          cost: '$15/hr',
+          roi: '154% (recovers abandoned cart sales)',
+          benefit: 'Queue bottleneck reduced by ~35%',
+          timeToImpact: 'Immediate'
         };
+        recommendationBlock = `\n\n💡 **BrewMind Recommendation:**\nI have prepared a shift-optimization recommendation to hire a temporary barista support. Click **Apply** below to add support to the register line!`;
       } else {
-        actionAdvice = `\n\nStaffing looks adequate for current demand (${qLen} in queue).`;
+        urgencyText = `\n\n✅ **Staff Load:** Queue is clear (${qLen} waiting). Current staff distribution is adequate for demand.`;
       }
-      
-      return `**Barista Performance:**\n- **Emma** — Speed: 1.25x, Stress: **${emma?.stress || 0}%**, Orders: ${emma?.ordersServed || 0}. ${emma?.busy ? '🔴 Busy' : '🟢 Free'}\n- **Sophia** — Speed: 1.0x, Quality: 1.0x, Stress: **${sophia?.stress || 0}%**. ${sophia?.busy ? '🔴 Busy' : '🟢 Free'}\n- **Liam** — Speed: 0.75x, Quality: 1.3x, Stress: **${liam?.stress || 0}%**. ${liam?.busy ? '🔴 Busy' : '🟢 Free'}${actionAdvice}`;
+
+      return `### 📊 Barista Shift Performance\n\n* **Emma** — Speed: **1.25x**, Quality: **0.7x**, Stress: **${emma?.stress || 0}%**, Orders served: **${emma?.ordersServed || 0}**. Status: ${emma?.busy ? '🔴 Brewing' : '🟢 Idle'}\n* **Sophia** — Speed: **1.0x**, Quality: **1.0x**, Stress: **${sophia?.stress || 0}%**, Orders served: **${sophia?.ordersServed || 0}**. Status: ${sophia?.busy ? '🔴 Brewing' : '🟢 Idle'}\n* **Liam** — Speed: **0.75x**, Quality: **1.3x** (Specialty Expert), Stress: **${liam?.stress || 0}%**, Orders served: **${liam?.ordersServed || 0}**. Status: ${liam?.busy ? '🔴 Brewing' : '🟢 Idle'}${urgencyText}${recommendationBlock}`;
     }
 
-    // --- Inventory ---
+    // --- Intent 4: Inventory / Stock / Suppliers ---
     if (p.includes('inventory') || p.includes('beans') || p.includes('milk') || p.includes('stock') || p.includes('restock') || p.includes('replenish') || p.includes('supplies')) {
       const beans = state.inventory.coffeeBeans;
       const milk = state.inventory.milk;
       const cups = state.inventory.cups;
-      const beansPct = (beans.current / beans.max * 100).toFixed(0);
-      const milkPct = (milk.current / milk.max * 100).toFixed(0);
-      const cupsPct = (cups.current / cups.max * 100).toFixed(0);
-      
-      let critical = [];
-      if (beansPct < 35) critical.push('Coffee Beans');
-      if (milkPct < 35) critical.push('Milk');
-      if (cupsPct < 35) critical.push('Cups');
-      
-      if (critical.length > 0) {
+      const beansPct = parseFloat(getInvPct(beans));
+      const milkPct = parseFloat(getInvPct(milk));
+      const cupsPct = parseFloat(getInvPct(cups));
+
+      let lowItems = [];
+      if (beansPct < 40) lowItems.push('Coffee Beans');
+      if (milkPct < 40) lowItems.push('Milk');
+      if (cupsPct < 40) lowItems.push('Cups');
+
+      let recommendationBlock = '';
+      if (lowItems.length > 0) {
         this._pendingRecommendation = {
-          action: 'restock_inventory', title: 'Emergency Restock Required',
-          observation: `${critical.join(', ')} stock below 35% capacity.`,
-          reasoning: 'Low stock leads to order cancellations and lost revenue during peak hours.',
-          assumptions: 'Campus supply courier is available.',
-          confidencePct: 96, cost: '₹500', benefit: 'Stock restored to 100%', roi: '320%', timeToImpact: 'Immediate'
+          action: 'restock_inventory',
+          title: 'Replenish Core Inventory Stock',
+          confidencePct: 96,
+          observation: `Low stock detected on ${lowItems.join(', ')}.`,
+          reasoning: 'Running out of ingredients triggers immediate order cancellations, dropping customer satisfaction by 15-20 points.',
+          assumptions: 'Local campus suppliers are open and lead times remain standard.',
+          cost: '$45.00',
+          roi: '320% (prevented sales cancellation losses)',
+          benefit: 'Restores inventory status to 100% capacity',
+          timeToImpact: '25 simulated minutes'
         };
+        recommendationBlock = `\n\n💡 **BrewMind Recommendation:**\nCritical stock warning. I recommend placing a JIT replenishment order. Click **Apply** below to trigger immediate delivery!`;
+      } else {
+        recommendationBlock = `\n\n✅ **Inventory Status:** All core ingredient levels are well-stocked and fresh. No urgent restocking is necessary.`;
       }
-      
-      return `**Inventory Analysis:**\n- ☕ Coffee Beans: **${beans.current.toFixed(1)}kg / ${beans.max}kg** (${beansPct}%) ${beansPct < 35 ? '🔴 LOW' : '🟢'}\n- 🥛 Milk: **${milk.current.toFixed(1)}L / ${milk.max}L** (${milkPct}%) ${milkPct < 35 ? '🔴 LOW' : '🟢'}\n- 🥤 Cups: **${cups.current} / ${cups.max}** (${cupsPct}%) ${cupsPct < 35 ? '🔴 LOW' : '🟢'}\n${critical.length > 0 ? `\n**⚠ ${critical.join(' & ')} running critically low — restock recommended!**` : '\n✅ All stock levels are healthy.'}`;
+
+      return `### 📦 Live Inventory Audit\n\n* **☕ Coffee Beans**: **${beans.current.toFixed(1)}kg / ${beans.max}kg** (${beansPct}%) — ${beansPct < 40 ? '🔴 Warning: Low' : '🟢 Healthy'}\n* **🥛 Sourced Milk**: **${milk.current.toFixed(1)}L / ${milk.max}L** (${milkPct}%) — ${milkPct < 40 ? '🔴 Warning: Low' : '🟢 Healthy'}\n* **🥤 Biodegradable Cups**: **${cups.current} / ${cups.max}** (${cupsPct}%) — ${cupsPct < 40 ? '🔴 Warning: Low' : '🟢 Healthy'}${recommendationBlock}`;
     }
 
-    // --- Queue / Wait / Satisfaction ---
+    // --- Intent 5: Revenue / Margins / Financials ---
+    if (p.includes('revenue') || p.includes('sales') || p.includes('money') || p.includes('profit') || p.includes('earning') || p.includes('income') || p.includes('margin') || p.includes('pricing') || p.includes('charge')) {
+      const elapsedHours = Math.max(0.5, (state.clock.hours + state.clock.minutes / 60) - 6);
+      const hourlyRate = (state.revenue / elapsedHours).toFixed(2);
+      const projectedSales = (parseFloat(hourlyRate) * 12).toFixed(2);
+      const completed = state.orders.completed;
+      const cancelled = state.orders.cancelled;
+      const cancelRate = completed + cancelled > 0 ? (cancelled / (completed + cancelled) * 100).toFixed(0) : 0;
+
+      // Business margin logic: Average espresso sale price is $4.50, ingredient unit cost (beans + milk + cup) is ~$0.85
+      const grossMarginPct = 81; // ~81% gross margins on coffee
+      
+      let financialAdvice = '';
+      if (parseFloat(cancelRate) > 8) {
+        financialAdvice = `\n\n⚠ **Margin Leakage:** Your order cancellation rate is at **${cancelRate}%** due to stockout or delays. This is leaking about **$${(cancelled * 4.50).toFixed(2)}** in lost revenue. We must resolve inventory bottlenecks immediately.`;
+      } else {
+        financialAdvice = `\n\n📈 **Financial health:** Gross margin on beverage sales is holding strong at **${grossMarginPct}%**. Upselling milk alternatives (Oat/Almond) for a $0.60 premium will increase margins by another 4%.`;
+      }
+
+      return `### 💸 Store Financial Performance\n\n* **Total Revenue Today**: **$${state.revenue.toFixed(2)}**\n* **Orders Logged**: **${completed}** completed, **${cancelled}** cancelled (${cancelRate}% cancellation rate)\n* **Store Velocity**: **$${hourlyRate}/hr**\n* **Projected Daily Revenue**: **$${projectedSales}**\n* **Gross Beverage Margin**: **${grossMarginPct}%**${financialAdvice}`;
+    }
+
+    // --- Intent 6: Queue / Wait Times / Satisfaction ---
     if (p.includes('queue') || p.includes('wait') || p.includes('satisfaction') || p.includes('reputation') || p.includes('customer')) {
       const qLen = state.customers.queueLength;
       const sat = state.customerSatisfaction;
       const rep = state.cafeReputation;
       const avgWait = state.customers.avgWaitTime;
       
-      let analysis = '';
-      if (qLen > 8) analysis = '\n\n**🔴 Critical:** Queue is dangerously long. Customers will start leaving. Hire temp staff immediately.';
-      else if (qLen > 5) analysis = '\n\n**⚠ Warning:** Queue building up. Consider adding staff or speeding up service.';
-      else if (sat < 60) analysis = '\n\n**⚠ Warning:** Satisfaction is dropping. Check wait times and machine health.';
-      else analysis = '\n\n✅ Operations are running smoothly.';
-      
-      return `**Customer & Queue Analysis:**\n- Queue Length: **${qLen} students** ${qLen > 5 ? '⚠' : '✅'}\n- Avg Wait Time: **${avgWait.toFixed(1)} min**\n- Satisfaction: **${sat}%** ${sat > 80 ? '(excellent)' : sat > 60 ? '(good)' : '(needs attention)'}\n- Reputation: **${rep}/100**${analysis}`;
-    }
-
-    // --- Revenue / Sales ---
-    if (p.includes('revenue') || p.includes('sales') || p.includes('money') || p.includes('profit') || p.includes('earning') || p.includes('income')) {
-      const elapsedHours = Math.max(0.1, (state.clock.hours + state.clock.minutes / 60) - 6);
-      const hourlyRate = (state.revenue / elapsedHours).toFixed(2);
-      const projected = (parseFloat(hourlyRate) * 12).toFixed(2);
-      return `**Revenue Report:**\n- Total Today: **$${state.revenue.toFixed(2)}**\n- Orders: **${state.orders.completed}** completed, **${state.orders.cancelled}** cancelled\n- Hourly Rate: **$${hourlyRate}/hr**\n- Projected Daily: **$${projected}**\n${state.orders.cancelled > 3 ? '\n⚠ High cancellation rate — check inventory and wait times.' : '\n✅ Revenue trajectory looks healthy.'}`;
-    }
-
-    // --- Machine / Maintenance ---
-    if (p.includes('machine') || p.includes('espresso') || p.includes('equipment') || p.includes('maintenance') || p.includes('calibrat')) {
-      const health = state.machineHealth;
-      
-      if (health < 70) {
-        this._pendingRecommendation = {
-          action: 'calibrate_machines', title: 'Calibrate Espresso Systems',
-          observation: `Machine health at ${health}% — risk of thermal failure.`,
-          reasoning: 'Calibrating pressure and temperature systems prevents breakdowns during peak hours.',
-          assumptions: 'Spare parts available; no power outages.',
-          confidencePct: 88, cost: '₹350', benefit: 'Machine health restored to 100%', roi: '210%', timeToImpact: '15 minutes'
-        };
+      let breakdown = '';
+      if (qLen > 5) {
+        breakdown = `\n\n⚠ **Bottleneck Detected:** Student wait times are averaging **${avgWait.toFixed(1)} minutes**. Emma's prep speed is high, but registration queueing is creating a pileup. Suggest deploying a temp staff or adjusting register priority.`;
+      } else {
+        breakdown = `\n\n✅ **Service Flow:** Flow rate is optimal. Average wait time is **${avgWait.toFixed(1)} minutes**, keeping satisfaction indices stable.`;
       }
-      
-      return `**Equipment Status:**\n- Machine Health: **${health}%** ${health > 80 ? '✅' : health > 50 ? '⚠' : '🔴'}\n- ${health > 80 ? 'Operating normally. No maintenance needed.' : health > 50 ? 'Performance degrading — schedule calibration soon.' : 'CRITICAL — failure imminent! Run maintenance NOW.'}\n${health < 70 ? '\n**Recommendation:** Calibrate immediately to prevent downtime.' : ''}`;
+
+      return `### 👥 Customer Experience Metrics\n\n* **Queue Length**: **${qLen} students** ${qLen > 5 ? '⚠' : '✅'}\n* **Average Wait Time**: **${avgWait.toFixed(1)} mins**\n* **Manager Satisfaction Index**: **${sat}%** (${sat > 80 ? 'Excellent' : sat > 65 ? 'Stable' : 'Critical - Check operations'})\n* **Store Reputation Score**: **${rep}/100**${breakdown}`;
     }
 
-    // --- Weather ---
+    // --- Intent 7: Machine / Maintenance ---
+    if (p.includes('machine') || p.includes('espresso') || p.includes('equipment') || p.includes('maintenance') || p.includes('calibrat') || p.includes('broken')) {
+      const health = state.machineHealth;
+      let recommendationBlock = '';
+
+      if (health < 75) {
+        this._pendingRecommendation = {
+          action: 'calibrate_machines',
+          title: 'Calibrate Espresso Boiler Pressure',
+          confidencePct: 88,
+          observation: `Boiler group temperature fluctuations detected. Machine health at ${health}%.`,
+          reasoning: 'Calibrating steam valves and descaling groupheads restores extraction temperature consistency, preventing flat taste profiles and delays.',
+          assumptions: 'No active electrical brownouts.',
+          cost: '$20.00',
+          roi: '210% (recovers speed-of-prep gains)',
+          benefit: 'Restores boiler health to 100%',
+          timeToImpact: '15 simulated minutes'
+        };
+        recommendationBlock = `\n\n💡 **BrewMind Recommendation:**\nMachine health is degrading. I recommend calibrating the heating elements. Click **Apply** below to run maintenance immediately!`;
+      } else {
+        recommendationBlock = `\n\n✅ **Equipment Diagnostics:** Espresso boiler pressure, grouphead gaskets, and grind calibrations are operating at peak efficiency. No maintenance is required.`;
+      }
+
+      return `### 🔧 Equipment & Espresso Systems Diagnostics\n\n* **Espresso Machine Health**: **${health}%** ${health < 75 ? '🔴 Warning' : '🟢 Optimal'}\n* **Boiler Temperature**: Stable (195°F - 202°F)\n* **Grouphead Pressure**: 9.1 Bars (standard espresso extraction profile)${recommendationBlock}`;
+    }
+
+    // --- Intent 8: Weather / Recipe Forecast ---
     if (p.includes('weather') || p.includes('rain') || p.includes('sunny') || p.includes('temperature') || p.includes('forecast')) {
       const w = state.weather;
-      const tip = w.condition === 'Rainy' ? '☔ Hot drinks demand +25%. Promote Hot Chocolate & Chai.'
-        : w.condition === 'Sunny' ? '☀ Cold drinks trending. Feature Cold Brew & Iced Latte.'
-        : '🌤 Moderate weather. Standard menu expected.';
-      return `**Weather Impact:**\n- Conditions: **${w.condition}, ${w.temp}°C**\n- ${tip}`;
+      let menuTip = '';
+      if (w.condition === 'Rainy') {
+        menuTip = `☔ **Rainy Day Operations:** Cold weather directs student traffic to hot drinks (+25% demand). Feature **Double Espressos** and **Chai Lattes** at the front register counter. Keep hot cups stocked!`;
+      } else if (w.condition === 'Sunny') {
+        menuTip = `☀ **Sunny Day Operations:** Temperature is hot (${w.temp}°C). Cold beverage demand is peaking. Upsell **Iced Lattes**, **Syrup Additions**, and **Nitro Cold Brew**. Check milk stock frequently!`;
+      } else {
+        menuTip = `🌤 **Standard Operations:** Mild weather. Demand is evenly balanced between cold brew and warm espresso selections.`;
+      }
+
+      return `### 🌦 Weather & Demand Projection\n\n* **Current Weather**: **${w.condition}**\n* **Sensor Temperature**: **${w.temp}°C**\n\n💡 **Menu Strategy:**\n${menuTip}`;
     }
 
-    // --- Optimize / Suggest / Recommend ---
+    // --- Intent 9: Operations Optimization / Audit ---
     if (p.includes('optimize') || p.includes('suggest') || p.includes('recommend') || p.includes('improve') || p.includes('advice') || p.includes('what should')) {
       const issues = [];
-      if (state.customers.queueLength > 5) issues.push(`Queue is long (${state.customers.queueLength}) — **hire temp staff**`);
-      if (state.machineHealth < 70) issues.push(`Machine health low (${state.machineHealth}%) — **run calibration**`);
-      if (state.inventory.coffeeBeans.current / state.inventory.coffeeBeans.max < 0.35) issues.push('Coffee beans running low — **restock now**');
-      if (state.inventory.milk.current / state.inventory.milk.max < 0.35) issues.push('Milk supply low — **restock now**');
-      if (state.customerSatisfaction < 65) issues.push(`Satisfaction dropping (${state.customerSatisfaction}%) — **reduce wait times**`);
+      if (state.customers.queueLength > 5) issues.push(`Queue congestion (${state.customers.queueLength} waiting) — **Recommend: Hire temp barista Jordan/Taylor**`);
+      if (state.machineHealth < 75) issues.push(`Boiler health at ${state.machineHealth}% — **Recommend: Run espresso pressure calibration**`);
+      if (state.inventory.coffeeBeans.current / state.inventory.coffeeBeans.max < 0.4) issues.push(`Coffee beans low (${getInvPct(state.inventory.coffeeBeans)}%) — **Recommend: Restock beans**`);
+      if (state.inventory.milk.current / state.inventory.milk.max < 0.4) issues.push(`Milk low (${getInvPct(state.inventory.milk)}%) — **Recommend: Restock milk**`);
+      if (state.customerSatisfaction < 68) issues.push(`Satisfaction down (${state.customerSatisfaction}%) — **Recommend: Reduce queue wait times**`);
       
       const emma = state.staff.list.find(b => b.name === 'Emma');
-      if (emma?.stress > 70) issues.push(`Emma's stress at ${emma.stress}% — **rotate her off register**`);
-      
+      if (emma && emma.stress > 65) issues.push(`Emma's stress at ${emma.stress}% — **Recommend: Rotate her off high-volume registers**`);
+
       if (issues.length === 0) {
-        return `**Operations Analysis:** ✅ Everything looks great!\n\nAll metrics are within healthy ranges. Keep monitoring during the next class break rush.\n\n- Queue: ${state.customers.queueLength} students\n- Satisfaction: ${state.customerSatisfaction}%\n- Machine: ${state.machineHealth}%\n- Revenue: $${state.revenue.toFixed(2)}`;
+        return `### 📈 Operations Optimization Audit: Perfect!\n\nAll café metrics are green and balanced. \n- **Queue**: ${state.customers.queueLength} students (Clear)\n- **Satisfaction**: ${state.customerSatisfaction}% (Healthy)\n- **Beans**: ${getInvPct(state.inventory.coffeeBeans)}% (Good)\n- **Revenue**: $${state.revenue.toFixed(2)}\n\nKeep monitoring during class transition windows!`;
       }
-      return `**Operations Analysis — ${issues.length} issue${issues.length > 1 ? 's' : ''} found:**\n${issues.map((issue, i) => `${i+1}. ${issue}`).join('\n')}\n\nWould you like me to act on any of these?`;
+
+      return `### 📈 Operations Optimization Audit: ${issues.length} Issues Found\n\nBased on live telemetry, here is your prioritized action checklist:\n\n${issues.map((issue, index) => `${index + 1}. ${issue}`).join('\n')}\n\n*Would you like me to generate recommendation cards to apply any of these solutions?*`;
     }
 
-    // --- Help ---
+    // --- Intent 10: Help / Commands ---
     if (p.includes('help') || p === 'commands' || p === '?') {
-      return `Here's what I can help with:\n\n- *"How are my baristas doing?"* — Staff performance analysis\n- *"Check inventory"* — Stock level audit\n- *"What's our revenue?"* — Sales & earnings report\n- *"Queue status"* — Wait times & satisfaction\n- *"Machine health"* — Equipment diagnostics\n- *"Optimize operations"* — Find & fix issues\n- *"Is LM Studio working?"* — AI connection status\n- *"Weather impact"* — Weather-based menu suggestions\n\n**Voice commands:** *"Run rain simulation"*, *"Prepare for lunch rush"*, *"Generate report"*`;
+      return `### 🛠 BrewMind AI Help Center\n\nI can help you audit, forecast, and optimize your campus cafe operations! Try asking me:\n\n* **Staff Performance** — *"How are my baristas doing?"* or *"barista stress"* \n* **Inventory Audits** — *"Check stock levels"* or *"should I restock?"*\n* **Financial Telemetry** — *"Show revenue"* or *"what are our margins?"*\n* **Customer Experience** — *"Queue status"* or *"why is satisfaction dropping?"*\n* **Equipment Diagnostics** — *"Espresso machine health"* or *"schedule calibration"* \n* **Weather Analysis** — *"Weather forecast"* or *"menu strategy"* \n* **General Optimization** — *"Optimize operations"* or *"what should I do next?"*\n\n**Voice commands support:** *"Run rain simulation"*, *"Prepare for lunch rush"*, *"Generate report"*`;
     }
 
-    // --- Intelligent contextual fallback: analyze state and give the most relevant insight ---
-    const issues = [];
-    if (state.customers.queueLength > 5) issues.push('high queue');
-    if (state.machineHealth < 70) issues.push('machine issues');
-    if (state.customerSatisfaction < 65) issues.push('low satisfaction');
-    if (state.inventory.coffeeBeans.current / state.inventory.coffeeBeans.max < 0.35) issues.push('low beans');
-    if (state.inventory.milk.current / state.inventory.milk.max < 0.35) issues.push('low milk');
-    
-    if (issues.length > 0) {
-      return `I'm not sure what you mean by *"${prompt}"*, but I noticed some issues:\n\n${issues.map(i => `- ⚠ **${i.charAt(0).toUpperCase() + i.slice(1)}**`).join('\n')}\n\nTry asking *"optimize operations"* for detailed recommendations, or type *"help"* to see what I can do.`;
+    // --- Intent 11: Conversational Business Advisor Fallback (Semantic Match) ---
+    if (p.includes('menu') || p.includes('drink') || p.includes('croissant') || p.includes('muffin') || p.includes('latte') || p.includes('espresso') || p.includes('specialty')) {
+      return `### ☕ BrewMind Menu Strategy Advisory\n\nLet's analyze your menu structure. Currently, specialty espresso drinks (Iced Lattes, Macchiatos) represent your **highest-margin items (grossing over 80% margins)**.\n\n**Menu Optimization Recommendations:**\n1. **High-Stress Rushes**: Direct customers to standard drip coffee or double espresso. Emma can brew these at 1.25x speed with minimal quality loss.\n2. **Slow Hours (3 PM - 5 PM)**: Promote premium specialty drinks (Liam extraction). His 1.3x quality rating maximizes satisfaction and builds brand reputation.\n3. **Add-Ons**: Charge a $0.60 premium for oat milk and flavored syrups. The wholesale cost is less than $0.08 per serving, boosting net margin by 4-5% per transaction.`;
     }
-    
-    return `Thanks for the message! I analyzed your current state and everything looks healthy:\n\n- Queue: **${state.customers.queueLength}** students ✅\n- Satisfaction: **${state.customerSatisfaction}%** ✅\n- Revenue: **$${state.revenue.toFixed(2)}**\n- Machine: **${state.machineHealth}%** ✅\n\nTry asking me something specific like *"check inventory"*, *"staff performance"*, or *"optimize operations"*. Type *"help"* for all commands.`;
+
+    if (p.includes('marketing') || p.includes('grow') || p.includes('advertise') || p.includes('customer') || p.includes('loyal') || p.includes('discount')) {
+      return `### 📢 BrewMind Local Marketing Advisory\n\nTo drive transaction volumes and increase customer retention at your campus cafe, let's implement local micro-campaigns:\n\n1. **Loyalty Stamp Cards**: Implement a "Buy 9, Get the 10th Free" stamp card program. This increases customer lifetime value (LTV) and establishes a daily habit.\n2. **Faculty Happy Hour**: Offer a 15% discount for faculty cardholders between 2:00 PM and 4:00 PM (our standard low-activity period). Direct Liam to prepare these orders to ensure premium quality.\n3. **Sunny Day Bundling**: Bundle iced drinks with bakery muffins for a $0.50 discount. This clears perishable muffins (which decay and discard automatically at 15% freshness) and increases average transaction size.`;
+    }
+
+    if (p.includes('campus') || p.includes('student') || p.includes('faculty') || p.includes('prof') || p.includes('class') || p.includes('exam')) {
+      return `### 🎓 Campus Target Demographics Analysis\n\nYour store serves two distinct customer segments on campus:\n\n1. **The Time-Pressed Student**: High volume, extremely sensitive to wait times. During class breaks (10-minute windows), they want fast service. Speed is everything here—Emma is your main asset, and transaction speed trumps quality.\n2. **The Leisurely Faculty Guest**: High average ticket size, highly sensitive to beverage quality. They prefer dining in and appreciate complex flavor notes. Deploy Liam (0.75x speed, 1.3x quality modifier) to handle these orders to protect your store's reputation score.`;
+    }
+
+    // Default intelligent state summary
+    const activeIssues = [];
+    if (state.customers.queueLength > 5) activeIssues.push('Queue congestion');
+    if (state.machineHealth < 75) activeIssues.push('Espresso machine wear');
+    if (state.customerSatisfaction < 65) activeIssues.push('Low customer satisfaction');
+    if (state.inventory.coffeeBeans.current / state.inventory.coffeeBeans.max < 0.4) activeIssues.push('Low coffee beans');
+
+    if (activeIssues.length > 0) {
+      return `### 💡 Operational Alert Summary\n\nI scanned the cafe's sensors in response to your query. While I don't have a direct answer for *"${prompt}"* in my local offline registry, I detected these critical operational items:\n\n${activeIssues.map(i => `- ⚠ **${i}**`).join('\n')}\n\nType *"optimize operations"* to see my detailed priority audit, or ask me something specific like *"check inventory"*!`;
+    }
+
+    return `### ☕ BrewMind AI Operations Assistant\n\nThanks for your question! I analyzed the cafe's current live state, and everything looks stable:\n\n* **Queue**: **${state.customers.queueLength} students** (Healthy) ✅\n* **Satisfaction**: **${state.customerSatisfaction}%** (Stable) ✅\n* **Revenue**: **$${state.revenue.toFixed(2)}** today\n* **Espresso System**: **${state.machineHealth}%** health ✅\n\n*How can I help you today? Try asking me about inventory stock levels, barista shift stress, or machine calibrations!*`;
   }
 
   /**

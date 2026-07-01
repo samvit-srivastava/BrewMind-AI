@@ -710,9 +710,10 @@ body {
 /* --- Content Workspace Area --- */
 .content-area {
   flex-grow: 1;
-  padding: 2rem;
+  padding: 2rem 2rem 4.5rem 2rem;
   overflow-y: auto;
   position: relative;
+  scrollbar-gutter: stable;
 }
 
 /* View Sections */
@@ -1169,6 +1170,18 @@ body {
 @keyframes typing-pulse {
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
+}
+
+.suggest-chip-btn:hover {
+  background: rgba(212, 163, 115, 0.15) !important;
+  border-color: var(--color-primary) !important;
+  color: #FFF !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.suggest-chip-btn:active {
+  transform: translateY(0);
 }
 
 .drawer-footer {
